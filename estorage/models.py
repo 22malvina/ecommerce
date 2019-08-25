@@ -21,20 +21,11 @@ class FilterCityIdRegion(models.Model):
 #### Storage
 
 class Storage(models.Model):
+    """
+    API
+    """
     title = models.CharField(max_length=200)
     size = models.IntegerField(u"Максимальное количество штук различных позиций, которое может принять склад.")
-
-    def quantity(self, product):
-        quantity = 0
-        #for stock in Stock.objects.filter(storage=self, product=product):
-        #    #quantity += stock.quantity
-        #    if stock.has:
-        #        quantity += stock.quantity
-        #    else:
-        #        quantity -= stock.quantity
-        for stock in self.__stocks(product):
-            quantity += stock.quantity
-        return quantity
 
     def __has(self, product, quantity):
         if self.quantity(product) >= quantity:
@@ -45,36 +36,6 @@ class Storage(models.Model):
         if self.quantity_all() + quantity < self.size:
             return True
         return False
-
-    def __stocks(self, product):
-        stocks = []
-        for stock in Stock.objects.filter(storage=self, product=product, has=True):
-            for stock_element in stocks:
-                if stock.part_number == stock_element['part_number']:
-                    stock_element['quantity'] += stock.quantity
-                    break
-            else:
-                stocks.append({
-                    'part_number': stock.part_number,
-                    'quantity': stock.quantity,
-                })
-
-        for stock in Stock.objects.filter(storage=self, product=product, has=False):
-            for stock_element in stocks:
-                if stock.part_number == stock_element['part_number']:
-                    stock_element['quantity'] -= stock.quantity
-                    break
-            else:
-                # Списали того чего не было
-                assert False
-
-        stock_object = []
-        for stock in stocks:
-            if stock['quantity'] < 0:
-                assert False
-            elif stock['quantity'] > 0:
-                stock_object.append(Stock(product=product, quantity=stock['quantity'], storage=self, part_number=stock['part_number'], has=True))
-        return stock_object
 
     def list_product(self):
         products = set()
@@ -174,6 +135,18 @@ class Storage(models.Model):
             assert False
         self.__load(True, product, quantity, part_number)
 
+    def quantity(self, product):
+        quantity = 0
+        #for stock in Stock.objects.filter(storage=self, product=product):
+        #    #quantity += stock.quantity
+        #    if stock.has:
+        #        quantity += stock.quantity
+        #    else:
+        #        quantity -= stock.quantity
+        for stock in self.__stocks(product):
+            quantity += stock.quantity
+        return quantity
+
     def quantity_all(self):
         quantity = 0
         for stock in Stock.objects.filter(storage=self):
@@ -188,6 +161,9 @@ class Storage(models.Model):
                 #print quantity
         return quantity
 
+    def __stocks(self, product):
+        return Stock.list(self, product)
+
     #def __unload(self, stock, quantity):
     #    self.__load(False, stock.product, quantity, stock.part_number)
 
@@ -199,12 +175,50 @@ class Stock(models.Model):
     part_number = models.ForeignKey(PartNumber, on_delete=models.CASCADE)
     has = models.BooleanField(verbose_name=u'Пришоло на склад', default=True)
 
+    @staticmethod
+    def list(storage, product):
+        stocks = []
+        for stock in Stock.objects.filter(storage=storage, product=product, has=True):
+            for stock_element in stocks:
+                if stock.part_number == stock_element['part_number']:
+                    stock_element['quantity'] += stock.quantity
+                    break
+            else:
+                stocks.append({
+                    'part_number': stock.part_number,
+                    'quantity': stock.quantity,
+                })
+
+        for stock in Stock.objects.filter(storage=storage, product=product, has=False):
+            for stock_element in stocks:
+                if stock.part_number == stock_element['part_number']:
+                    stock_element['quantity'] -= stock.quantity
+                    break
+            else:
+                # Списали того чего не было
+                assert False
+
+        stock_object = []
+        for stock in stocks:
+            if stock['quantity'] < 0:
+                assert False
+            elif stock['quantity'] > 0:
+                stock_object.append(Stock(product=product, quantity=stock['quantity'], storage=storage, part_number=stock['part_number'], has=True))
+        return stock_object
+
+    def list_all():
+        pass
+
+
 class FilterStorageId(models.Model):
     storages = models.ManyToManyField(Storage)
 
 #### PickupPoint
 
 class PickupPoint(models.Model):
+    """
+    API
+    """
     title = models.CharField(max_length=200)
     city = models.ForeignKey(City, on_delete=models.CASCADE)
 
@@ -217,3 +231,27 @@ class PickupPoint(models.Model):
 class FilterPickupPointIdCity(models.Model):
     pickup_points = models.ManyToManyField(PickupPoint)
     cities = models.ManyToManyField(City)
+
+#### System Warehouse
+
+class SystemWarehouse(models.Model):
+    """
+    API
+    """
+    storages = models.ManyToManyField(Storage)
+
+    def pull(self, storage, product, quantity):
+        storage.pull(product, quantity)
+
+    def push(self, storage, product, quantity, part_number):
+        storage.push(product, quantity, part_number)
+
+    def quantity(self, product):
+        ## slow
+        quantity = 0
+        for storage in self.storages:
+            quantity += storage.quantity(product)
+        ## fast
+        stock_object = Stock.list_all(product)
+        return quantity
+

@@ -48,5 +48,9 @@ class FilterProductCrossIdCategoryBrand(models.Model):
                 return False
         return True
 
+    def has_product_instance(self, product_instance):
+        product_info = product_instance.product_info
+        return self.has(product_info)
+
 
 
