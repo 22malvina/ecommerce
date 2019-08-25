@@ -627,19 +627,29 @@ class Seller(models.Model):
         self.__change_status_for_order(order, u'Ожидает выдачи позиций заказа клиенту')
 
     def quantity_for_sale(self, product):
-        storages = self.shop.storages.all()
-        quantity = 0
-        for storage in storages:
-            quantity += self.quantity_for_sale_on_storage(product, storage)
-        return quantity
+        """
+        service online stocks
+        """
+        return service_online_stocks_quantity(self.shop.storages.all(), [product])
+
+        #storages = self.shop.storages.all()
+        #quantity = 0
+        #for storage in storages:
+        #    quantity += self.quantity_for_sale_on_storage(product, storage)
+        #return quantity
 
     def quantity_for_sale_on_storage(self, product, storage):
-        quantity = storage.quantity(product)
-        for reserve in Reserve.objects.filter(storage=storage, product=product):
-            quantity -= reserve.quantity
-            if quantity < 0:
-                raise ValidationError(u"Не коректное количество остатоков. Хотя приконкурентном взаимодействии могут продать больше чем есть в наличии, и тогда такая ситуация возможна")
-        return quantity
+        """
+        service online stocks
+        """
+        return service_online_stocks_quantity([storage], [product])
+
+        #quantity = storage.quantity(product)
+        #for reserve in Reserve.objects.filter(storage=storage, product=product):
+        #    quantity -= reserve.quantity
+        #    if quantity < 0:
+        #        raise ValidationError(u"Не коректное количество остатоков. Хотя приконкурентном взаимодействии могут продать больше чем есть в наличии, и тогда такая ситуация возможна")
+        #return quantity
 
     def reserve_product_on_storage(self, product, quantity, storage, info_text, part_number):
         reserve = Reserve(product=product, quantity=quantity, storage=storage, part_number=part_number)
@@ -805,3 +815,21 @@ class OrderSpecification(object):
         self.pickup_points = []
         self.executor = None
         self.seller = None
+
+
+#### service online stocks
+def service_online_stocks_quantity(storages, products):
+    if not storages:
+        #storages = self.shop.storages.all()
+        raise ValidationError(u"Склады должны быть указаны")
+    quantity = 0
+    for storage in storages:
+        for product in products:
+            quantity += storage.quantity(product)
+            for reserve in Reserve.objects.filter(storage=storage, product=product):
+                quantity -= reserve.quantity
+                if quantity < 0:
+                    raise ValidationError(u"Не коректное количество остатоков. Хотя приконкурентном взаимодействии могут продать больше чем есть в наличии, и тогда такая ситуация возможна")
+    return quantity
+
+
