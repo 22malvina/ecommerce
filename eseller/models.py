@@ -830,6 +830,9 @@ def service_online_stocks_quantity(storages, products):
                 quantity -= reserve.quantity
                 if quantity < 0:
                     raise ValidationError(u"Не коректное количество остатоков. Хотя приконкурентном взаимодействии могут продать больше чем есть в наличии, и тогда такая ситуация возможна")
+            # Товары в пути. Сущность транспортное средство.
+            # Резервы на товары в пути.
     return quantity
+
 
 
