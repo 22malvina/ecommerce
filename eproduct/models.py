@@ -18,6 +18,13 @@ class Product(models.Model):
     def __unicode__(self):
         return u"%s: %s - %s" % (self.id, self.title, self.brand)
 
+class ProductInstance(models.Model):
+    """
+    Like User - and not Class User like Manager
+    """
+    product_info = models.ForeignKey(Product)
+    serial_number = models.CharField(max_length=200)
+
 class FilterProductCrossIdCategoryBrand(models.Model):
     products = models.ManyToManyField(Product)
     categories = models.ManyToManyField(Category)
