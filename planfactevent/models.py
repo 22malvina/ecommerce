@@ -30,8 +30,8 @@ class PlanFactEvent(models.Model):
     #transport = models.ForeignKey(Transport, on_delete=models.CASCADE)
     transport_guid = models.IntegerField(u"guid транспорта сейчас соответствует id этого transport у нас в системе, так себе решение", null=True, blank=True)
 
-    price_currency = models.CharField(u"Валюта закупки / реализации", max_length=200, null=True, blank=True)
-    price_purchase = models.DecimalField(u"Стоимость закупки одной штуки если товар входит в систему / реализцаии если выходит - появляется один раз когда позиция входит в систему, или проходит по всем изменениям?", decimal_places=2, max_digits=7, null=True, blank=True)
+    currency = models.CharField(u"Валюта закупки / реализации", max_length=200, null=True, blank=True)
+    price = models.DecimalField(u"Стоимость закупки одной штуки если товар входит в систему / реализцаии если выходит - появляется один раз когда позиция входит в систему, или проходит по всем изменениям?", decimal_places=2, max_digits=7, null=True, blank=True)
 
     #Money
     #bank_account = models.ForeignKey(BankAccount)
@@ -89,5 +89,28 @@ class PlanFactEvent(models.Model):
             assert False
         return quantity
 
+    @staticmethod
+    def push_stocks(storage_guid, product_guid, quantity, currency, price):
+        plan_fact_event = PlanFactEvent.objects.create(
+            storage_guid=storage_guid,
+            product_guid=product_guid,
+            quantity=quantity,
+            currency=currency,
+            price=price,
+            is_in=True,
+            is_out=False,
+            is_plan=False,
+            is_fact=True)
 
-
+    @staticmethod
+    def pull_stocks(storage_guid, product_guid, quantity, currency, price):
+        plan_fact_event = PlanFactEvent.objects.create(
+            storage_guid=storage_guid,
+            product_guid=product_guid,
+            quantity=quantity,
+            currency=currency,
+            price=price,
+            is_in=False,
+            is_out=True,
+            is_plan=False,
+            is_fact=True)
