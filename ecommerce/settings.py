@@ -52,6 +52,8 @@ INSTALLED_APPS = (
     'eseller',
     'eloyalty',
     'eactor',
+
+    'planfactevent',
 )
 
 MIDDLEWARE_CLASSES = (

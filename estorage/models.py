@@ -209,7 +209,7 @@ class Stock(models.Model):
     invoice_guid = models.CharField(u'GUID накладной', max_length=200, null=True, blank=True)
     storage = models.ForeignKey(Storage, on_delete=models.CASCADE)
     # общая система остатков между складами и транспортными средствами
-    transport = models.ForeignKey(Transport, on_delete=models.CASCADE)
+    #transport = models.ForeignKey(Transport, on_delete=models.CASCADE)
     has = models.BooleanField(verbose_name=u'Пришоло на склад / ушло с склада', default=True)
     datetime_create = models.DateTimeField(u'дата и время создание', auto_now_add=True)
     datetime_process = models.DateTimeField(u'дата и время проведения опрерации', null=True, blank=True)
@@ -389,4 +389,6 @@ class SystemTransfer(models.Model):
                     И иметь возмодность запускать механизим инвенторизации по событию.
         """
         pass
+
+
 
