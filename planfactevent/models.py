@@ -90,8 +90,9 @@ class PlanFactEvent(models.Model):
         return quantity
 
     @staticmethod
-    def push_stocks(storage_guid, product_guid, quantity, currency, price):
+    def push_stocks(datetime_process, storage_guid, product_guid, quantity, currency, price):
         plan_fact_event = PlanFactEvent.objects.create(
+            datetime_process=datetime_process,
             storage_guid=storage_guid,
             product_guid=product_guid,
             quantity=quantity,
@@ -103,8 +104,9 @@ class PlanFactEvent(models.Model):
             is_fact=True)
 
     @staticmethod
-    def pull_stocks(storage_guid, product_guid, quantity, currency, price):
+    def pull_stocks(datetime_process, storage_guid, product_guid, quantity, currency, price):
         plan_fact_event = PlanFactEvent.objects.create(
+            datetime_process=datetime_process,
             storage_guid=storage_guid,
             product_guid=product_guid,
             quantity=quantity,
@@ -140,4 +142,7 @@ class PlanFactEvent(models.Model):
                 pass
         return list(product_guids)
 
-
+    #@classmethod
+    #def transfer_plan(cls, product_guid, quantity, currency, price, storage_guid_depart, datetime_depart, storage_guid_arrival, datetime_arrival):
+    #    cls.pull_stocks(datetime_depart, storage_guid_depart, product_guid, quantity, currency, price)
+    #    cls.push_stocks(datetime_arrival, storage_guid_arrival, product_guid, quantity, currency, price)

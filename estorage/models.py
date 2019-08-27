@@ -4,6 +4,8 @@ from eproduct.models import *
 from epartnumber.models import *
 
 from planfactevent.models import *
+import datetime
+from django.utils import timezone
 
 #### Region
 
@@ -56,10 +58,12 @@ class Storage(models.Model):
     def __load(self, has, product, quantity, part_number):
         #stock = Stock(product=product, quantity=quantity, storage=self, part_number=part_number, has=has)
         #stock.save()
+        #datetime_process = datetime.datetime.now()
+        datetime_process = timezone.now()
         if has:
-            PlanFactEvent.push_stocks(self.id, product.id, quantity, 'not', 0)
+            PlanFactEvent.push_stocks(datetime_process, self.id, product.id, quantity, 'not', 0)
         else:
-            PlanFactEvent.pull_stocks(self.id, product.id, quantity, 'not', 0)
+            PlanFactEvent.pull_stocks(datetime_process, self.id, product.id, quantity, 'not', 0)
 
     def pull(self, product, quantity):
         if not self.__has(product, quantity):
@@ -138,7 +142,8 @@ class Storage(models.Model):
 
 
         ####
-        PlanFactEvent.pull_stocks(self.id, product.id, quantity, 'not', 0)
+        datetime_process = timezone.now()
+        PlanFactEvent.pull_stocks(datetime_process, self.id, product.id, quantity, 'not', 0)
         ####
         #stocks = self.__stocks(product)
         #for stock in stocks:

@@ -8,6 +8,7 @@ import sys
 import time
 import pprint
 from decimal import Decimal
+from django.utils import timezone
 
 class TestEStorage(TestCase):
     def setUp(self):
@@ -15,6 +16,7 @@ class TestEStorage(TestCase):
         self.assertEqual.__self__.maxDiff = None
 
     def test_seller(self):
+        datetime_process = timezone.now()
         self.assertEqual(0, PlanFactEvent.count_product([], []))
 
         storage_guid_1 = 1
@@ -93,7 +95,7 @@ class TestEStorage(TestCase):
 
         # проверка push_stocks
         quantity_mi8_4 = 5
-        plan_fact_event_5 = PlanFactEvent.push_stocks(storage_guid_1, product_guid_mi8, quantity_mi8_4, currency_mi8_2, purchase_cost_mi8_2)
+        plan_fact_event_5 = PlanFactEvent.push_stocks(datetime_process, storage_guid_1, product_guid_mi8, quantity_mi8_4, currency_mi8_2, purchase_cost_mi8_2)
         quantity = PlanFactEvent.count_product([storage_guid_1], [product_guid_mi8])
         self.assertEqual(31, quantity)
         self.assertEqual(36, PlanFactEvent.count_product([storage_guid_1], []))
@@ -106,7 +108,7 @@ class TestEStorage(TestCase):
 
         # проверка pull_stocks
         quantity_r = 2
-        plan_fact_event_5 = PlanFactEvent.pull_stocks(storage_guid_2, product_guid_r, quantity_r, currency_r, purchase_cost_r)
+        plan_fact_event_5 = PlanFactEvent.pull_stocks(datetime_process, storage_guid_2, product_guid_r, quantity_r, currency_r, purchase_cost_r)
         quantity = PlanFactEvent.count_product([storage_guid_1], [product_guid_mi8])
         self.assertEqual(31, quantity)
         self.assertEqual(36, PlanFactEvent.count_product([storage_guid_1], []))
