@@ -481,7 +481,9 @@ class Seller(models.Model):
         for storage in storages:
             for pickup_point in pickup_points:
                 for price_factory in self.__price_factories_allow_for_situation_one_product(product, storages, pickup_points):
-                    for part_number in storage.list_part_number_for_product(product):
+                    #for part_number in storage.list_part_number_for_product(product):
+                    for element_purchase in ElemetPurchase.objects.filter(product=product):
+                        part_number = element_purchase.part_number
                         purchase_costs = set()
                         for element_purchase in ElemetPurchase.objects.filter(product=product, part_number=part_number):
                             link_price_product_storage_pickup_point.append({

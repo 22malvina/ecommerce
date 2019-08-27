@@ -114,3 +114,30 @@ class PlanFactEvent(models.Model):
             is_out=True,
             is_plan=False,
             is_fact=True)
+
+    @staticmethod
+    def product_guids_by_storage_guids(storage_guids):
+        """
+        Метод работает не коректно, он показыват все продукты которые были и есть на складе.
+        Нужно чтобы только те которые сейчас в наличии.
+        """
+        #storage_guids_product_guids_quantity = {}
+        product_guids = set()
+        if storage_guids:
+            for plan_fact_event in PlanFactEvent.objects.filter(storage_guid__in=storage_guids, is_in=True, is_out=False, is_plan=False, is_fact=True):
+                #storage_guids_product_guids_quantity[plan_fact_event.storage_guid].set(plan_fact_event.product_guid, 0)
+                product_guids.add(plan_fact_event.product_guid)
+            for plan_fact_event in PlanFactEvent.objects.filter(storage_guid__in=storage_guids, is_in=False, is_out=True, is_plan=False, is_fact=True):
+                #product_guids.add(fact_event.product_guid)
+                #product_guids.add(plan_fact_event.product_guid)
+                pass
+        else:
+            for plan_fact_event in PlanFactEvent.objects.filter(is_in=True, is_out=False, is_plan=False, is_fact=True):
+                #quantity += plan_fact_event.quantity
+                product_guids.add(plan_fact_event.product_guid)
+            for plan_fact_event in PlanFactEvent.objects.filter(is_in=False, is_out=True, is_plan=False, is_fact=True):
+                #quantity -= plan_fact_event.quantity
+                pass
+        return list(product_guids)
+
+
