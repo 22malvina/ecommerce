@@ -1,5 +1,8 @@
 #!-*-coding: utf-8 -*-
 from django.db import models
+#from django.db.models import Count, Min, Sum, Avg
+from django.db.models import Sum
+
 
 class PlanFactEvent(models.Model):
     """
@@ -40,30 +43,47 @@ class PlanFactEvent(models.Model):
     def count_product(storage_guids, product_guids):
         quantity = 0
         # меделенно можно через сумму
-        if product_guids and storage_guids:
-            for plan_fact_event in PlanFactEvent.objects.filter(storage_guid__in=storage_guids, product_guid__in=product_guids, is_in=True, is_out=False, is_plan=False, is_fact=True):
-                quantity += plan_fact_event.quantity
-            for plan_fact_event in PlanFactEvent.objects.filter(storage_guid__in=storage_guids, product_guid__in=product_guids, is_in=False, is_out=True, is_plan=False, is_fact=True):
-                quantity -= plan_fact_event.quantity
-        elif product_guids:
-            for plan_fact_event in PlanFactEvent.objects.filter(product_guid__in=product_guids, is_in=True, is_out=False, is_plan=False, is_fact=True):
-                quantity += plan_fact_event.quantity
-            for plan_fact_event in PlanFactEvent.objects.filter(product_guid__in=product_guids, is_in=False, is_out=True, is_plan=False, is_fact=True):
-                quantity -= plan_fact_event.quantity
-        elif storage_guids:
-            for plan_fact_event in PlanFactEvent.objects.filter(storage_guid__in=storage_guids, is_in=True, is_out=False, is_plan=False, is_fact=True):
-                quantity += plan_fact_event.quantity
-            for plan_fact_event in PlanFactEvent.objects.filter(storage_guid__in=storage_guids, is_in=False, is_out=True, is_plan=False, is_fact=True):
-                quantity -= plan_fact_event.quantity
-        else:
-            for plan_fact_event in PlanFactEvent.objects.filter(is_in=True, is_out=False, is_plan=False, is_fact=True):
-                quantity += plan_fact_event.quantity
-            for plan_fact_event in PlanFactEvent.objects.filter(is_in=False, is_out=True, is_plan=False, is_fact=True):
-                quantity -= plan_fact_event.quantity
-            #assert False
+        #if product_guids and storage_guids:
+        #    for plan_fact_event in PlanFactEvent.objects.filter(storage_guid__in=storage_guids, product_guid__in=product_guids, is_in=True, is_out=False, is_plan=False, is_fact=True):
+        #        quantity += plan_fact_event.quantity
+        #    for plan_fact_event in PlanFactEvent.objects.filter(storage_guid__in=storage_guids, product_guid__in=product_guids, is_in=False, is_out=True, is_plan=False, is_fact=True):
+        #        quantity -= plan_fact_event.quantity
+        #elif product_guids:
+        #    for plan_fact_event in PlanFactEvent.objects.filter(product_guid__in=product_guids, is_in=True, is_out=False, is_plan=False, is_fact=True):
+        #        quantity += plan_fact_event.quantity
+        #    for plan_fact_event in PlanFactEvent.objects.filter(product_guid__in=product_guids, is_in=False, is_out=True, is_plan=False, is_fact=True):
+        #        quantity -= plan_fact_event.quantity
+        #elif storage_guids:
+        #    for plan_fact_event in PlanFactEvent.objects.filter(storage_guid__in=storage_guids, is_in=True, is_out=False, is_plan=False, is_fact=True):
+        #        quantity += plan_fact_event.quantity
+        #    for plan_fact_event in PlanFactEvent.objects.filter(storage_guid__in=storage_guids, is_in=False, is_out=True, is_plan=False, is_fact=True):
+        #        quantity -= plan_fact_event.quantity
+        #else:
+        #    for plan_fact_event in PlanFactEvent.objects.filter(is_in=True, is_out=False, is_plan=False, is_fact=True):
+        #        quantity += plan_fact_event.quantity
+        #    for plan_fact_event in PlanFactEvent.objects.filter(is_in=False, is_out=True, is_plan=False, is_fact=True):
+        #        quantity -= plan_fact_event.quantity
+        #    #assert False
 
-        #quantity += PlanFactEvent.objects.filter(storage_guid__in=storage_guids, product_guid__in=product_guids, is_in=True, is_out=False, is_plan=False, is_fact=True).aggregate(Sum(quantity))['quantity__sum']
-        #quantity -= PlanFactEvent.objects.filter(storage_guid__in=storage_guids, product_guid__in=product_guids, is_in=False, is_out=True, is_plan=False, is_plan=True).aggregate(Sum(quantity))['quantity__sum']
+        #quantity__sum = PlanFactEvent.objects.filter(storage_guid__in=storage_guids, product_guid__in=product_guids, is_in=True, is_out=False, is_plan=False, is_fact=True).aggregate(Sum('quantity'))
+        if product_guids and storage_guids:
+            quantity__sum_in = PlanFactEvent.objects.filter(storage_guid__in=storage_guids, product_guid__in=product_guids, is_in=True, is_out=False, is_plan=False, is_fact=True).aggregate(Sum('quantity'))
+            quantity__sum_out = PlanFactEvent.objects.filter(storage_guid__in=storage_guids, product_guid__in=product_guids, is_in=False, is_out=True, is_plan=False, is_fact=True).aggregate(Sum('quantity'))
+        elif product_guids and not storage_guids:
+            quantity__sum_in = PlanFactEvent.objects.filter(product_guid__in=product_guids, is_in=True, is_out=False, is_plan=False, is_fact=True).aggregate(Sum('quantity'))
+            quantity__sum_out = PlanFactEvent.objects.filter(product_guid__in=product_guids, is_in=False, is_out=True, is_plan=False, is_fact=True).aggregate(Sum('quantity'))
+        elif not product_guids and storage_guids:
+            quantity__sum_in = PlanFactEvent.objects.filter(storage_guid__in=storage_guids, is_in=True, is_out=False, is_plan=False, is_fact=True).aggregate(Sum('quantity'))
+            quantity__sum_out = PlanFactEvent.objects.filter(storage_guid__in=storage_guids, is_in=False, is_out=True, is_plan=False, is_fact=True).aggregate(Sum('quantity'))
+        else:
+            quantity__sum_in = PlanFactEvent.objects.filter(is_in=True, is_out=False, is_plan=False, is_fact=True).aggregate(Sum('quantity'))
+            quantity__sum_out = PlanFactEvent.objects.filter(is_in=False, is_out=True, is_plan=False, is_fact=True).aggregate(Sum('quantity'))
+
+        if quantity__sum_in and quantity__sum_in.get('quantity__sum', 0):
+            quantity += quantity__sum_in.get('quantity__sum', 0)
+        #quantity__sum = PlanFactEvent.objects.filter(storage_guid__in=storage_guids, product_guid__in=product_guids, is_in=False, is_out=True, is_plan=False, is_fact=True).aggregate(Sum('quantity')).get('quantity__sum', 0)
+        if quantity__sum_out and quantity__sum_out.get('quantity__sum', 0):
+            quantity -= quantity__sum_out.get('quantity__sum', 0)
 
         if quantity < 0:
             assert False

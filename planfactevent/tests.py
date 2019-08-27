@@ -15,6 +15,8 @@ class TestEStorage(TestCase):
         self.assertEqual.__self__.maxDiff = None
 
     def test_seller(self):
+        self.assertEqual(0, PlanFactEvent.count_product([], []))
+
         storage_guid_1 = 1
 
         product_guid_mi8 = 1
