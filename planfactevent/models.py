@@ -101,7 +101,7 @@ class PlanFactEvent(models.Model):
         stocks_with_serial_number = []
         for storage_guid in storage_guids:
             for product_guid in product_guids:
-                for stock_with_serial_number in cls.stocks_with_serial_number_readey_for_move(storage_guid, product_guid):
+                for stock_with_serial_number in cls.stocks_with_serial_number_ready_for_move(storage_guid, product_guid):
                     stocks_with_serial_number.append(stock_with_serial_number)
         return len(stocks_with_serial_number)
 
@@ -295,7 +295,7 @@ class PlanFactEvent(models.Model):
         pass
 
     @classmethod
-    def stocks_with_serial_number_readey_for_move(cls, storage_guid, product_guid):
+    def stocks_with_serial_number_ready_for_move(cls, storage_guid, product_guid):
         """
         Простое перемещенеи между складами организации, поэтому изменния цены ен происходит.
         В дальнейшем можно будет проводить оперцию по изменрию цены при порче позиции при транспортировке или ...
@@ -356,12 +356,12 @@ class ServiceTransferProductFromTo(object):
 
         #start transaction
         #получить сейрийники подходящих товаров
-        stocks_with_serial_number_readey_for_move = PlanFactEvent.stocks_with_serial_number_readey_for_move(storage_depart_guid, product_guid)
+        stocks_with_serial_number_ready_for_move = PlanFactEvent.stocks_with_serial_number_ready_for_move(storage_depart_guid, product_guid)
         #выбрать столько сколько нужно.
-        if len(stocks_with_serial_number_readey_for_move) < quantity_for_transfer:
-            print 'Error: Has not stocks nead. In stock %s nead stock %s' % (len(stocks_with_serial_number_readey_for_move), quantity_for_transfer)
+        if len(stocks_with_serial_number_ready_for_move) < quantity_for_transfer:
+            print 'Error: Has not stocks nead. In stock %s nead stock %s' % (len(stocks_with_serial_number_ready_for_move), quantity_for_transfer)
             assert False
-        stocks_with_serial_number = stocks_with_serial_number_readey_for_move[:quantity_for_transfer]
+        stocks_with_serial_number = stocks_with_serial_number_ready_for_move[:quantity_for_transfer]
         #залочить их для других перемещений
         #    если не получилось залочить получить другие без этих
         #списать их с склада
