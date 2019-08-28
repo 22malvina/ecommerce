@@ -126,6 +126,16 @@ class PlanFactEvent(models.Model):
                     assert False
         return list(stocks_with_serial)
 
+
+    @classmethod
+    def count_product_with_serial_number(cls, storage_guids, product_guids):
+        stocks_with_serial_number = []
+        for storage_guid in storage_guids:
+            for product_guid in product_guids:
+                for stock_with_serial_number in cls.stocks_with_serial_number_readey_for_move(storage_guid, product_guid):
+                    stocks_with_serial_number.append(stock_with_serial_number)
+        return len(stocks_with_serial_number)
+
     @staticmethod
     def count_product(storage_guids, product_guids):
         quantity = 0

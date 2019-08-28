@@ -123,6 +123,7 @@ class TestEStorage(TestCase):
     def test_transfer(self):
         datetime_process = timezone.now()
         self.assertEqual(0, PlanFactEvent.count_product([], []))
+        self.assertEqual(0, PlanFactEvent.count_product_with_serial_number([], []))
 
         servic_transfer = ServiceTransferProductFromTo()
 
@@ -147,7 +148,9 @@ class TestEStorage(TestCase):
         plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1009, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
         plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1010, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
         self.assertEqual(10, PlanFactEvent.count_product([storage_depart_guid], [product_guid_mi8]))
+        self.assertEqual(10, PlanFactEvent.count_product_with_serial_number([storage_depart_guid], [product_guid_mi8]))
         self.assertEqual(0, PlanFactEvent.count_product([storage_arrival_guid], [product_guid_mi8]))
+        self.assertEqual(0, PlanFactEvent.count_product_with_serial_number([storage_arrival_guid], [product_guid_mi8]))
 
         quantity_for_transfer = 3
         transport_guid = 1
@@ -156,7 +159,9 @@ class TestEStorage(TestCase):
         servic_transfer.move(product_guid_mi8, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival)
 
         self.assertEqual(7, PlanFactEvent.count_product([storage_depart_guid], [product_guid_mi8]))
+        self.assertEqual(7, PlanFactEvent.count_product_with_serial_number([storage_depart_guid], [product_guid_mi8]))
         self.assertEqual(3, PlanFactEvent.count_product([storage_arrival_guid], [product_guid_mi8]))
+        self.assertEqual(3, PlanFactEvent.count_product_with_serial_number([storage_arrival_guid], [product_guid_mi8]))
 
         plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1011, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
         plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1012, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
@@ -164,13 +169,17 @@ class TestEStorage(TestCase):
         plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1014, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
 
         self.assertEqual(11, PlanFactEvent.count_product([storage_depart_guid], [product_guid_mi8]))
+        self.assertEqual(11, PlanFactEvent.count_product_with_serial_number([storage_depart_guid], [product_guid_mi8]))
         self.assertEqual(3, PlanFactEvent.count_product([storage_arrival_guid], [product_guid_mi8]))
+        self.assertEqual(3, PlanFactEvent.count_product_with_serial_number([storage_arrival_guid], [product_guid_mi8]))
 
         quantity_for_transfer = 10
         servic_transfer.move(product_guid_mi8, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival)
 
         self.assertEqual(1, PlanFactEvent.count_product([storage_depart_guid], [product_guid_mi8]))
+        self.assertEqual(1, PlanFactEvent.count_product_with_serial_number([storage_depart_guid], [product_guid_mi8]))
         self.assertEqual(13, PlanFactEvent.count_product([storage_arrival_guid], [product_guid_mi8]))
+        self.assertEqual(13, PlanFactEvent.count_product_with_serial_number([storage_arrival_guid], [product_guid_mi8]))
 
 
         for e in PlanFactEvent.objects.all():
