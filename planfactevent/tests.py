@@ -196,6 +196,40 @@ class TestEStorage(TestCase):
         datetime_arrival = datetime.datetime(2019, 8, 11, 14, 30, 00, tzinfo=pytz.UTC)
         self.assertRaises(AssertionError, servic_transfer.move, product_guid_mi8, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival)
 
+        ## Проверяем работу когда меньше 0, и когда сначало появились отрицательные остатки
+        serial_number = 1012
+        quantity_pull = 1
+        storage_guid_1 = 101
+        self.assertEqual(0, PlanFactEvent.count_product_with_serial_number([storage_guid_1], [product_guid_mi8]))
+        datetime_process = datetime.datetime(2019, 7, 7, 9, 02, 00, tzinfo=pytz.UTC)
+        servic_transfer.push(datetime_process, storage_guid_1, product_guid_mi8, serial_number, quantity_pull, currency_mi8, purchase_cost_mi8)
+        self.assertEqual(1, PlanFactEvent.count_product_with_serial_number([storage_guid_1], [product_guid_mi8]))
+
+        datetime_process = datetime.datetime(2019, 7, 7, 9, 01, 00, tzinfo=pytz.UTC)
+        servic_transfer.pull(datetime_process, storage_guid_1, product_guid_mi8, serial_number, quantity_pull, currency_mi8, purchase_cost_mi8)
+        self.assertEqual(0, PlanFactEvent.count_product([storage_guid_1], [product_guid_mi8]))
+        #self.assertEqual(0, PlanFactEvent.count_product_with_serial_number([storage_guid_1], [product_guid_mi8]))
+        # получается что сприсали раньше чем добавили
+        self.assertRaises(AssertionError, PlanFactEvent.count_product_with_serial_number, [storage_guid_1], [product_guid_mi8])
+
+        datetime_process = datetime.datetime(2019, 7, 7, 9, 03, 00, tzinfo=pytz.UTC)
+        servic_transfer.pull(datetime_process, storage_guid_1, product_guid_mi8, serial_number, quantity_pull, currency_mi8, purchase_cost_mi8)
+        # отрицательный остаток получился
+        self.assertRaises(AssertionError, PlanFactEvent.count_product, [storage_guid_1], [product_guid_mi8])
+        self.assertRaises(AssertionError, PlanFactEvent.count_product_with_serial_number, [storage_guid_1], [product_guid_mi8])
+
+        datetime_process = datetime.datetime(2019, 7, 7, 9, 00, 00, tzinfo=pytz.UTC)
+        servic_transfer.push(datetime_process, storage_guid_1, product_guid_mi8, serial_number, quantity_pull, currency_mi8, purchase_cost_mi8)
+        self.assertEqual(0, PlanFactEvent.count_product([storage_guid_1], [product_guid_mi8]))
+        self.assertEqual(0, PlanFactEvent.count_product_with_serial_number([storage_guid_1], [product_guid_mi8]))
+
+        datetime_process = datetime.datetime(2019, 7, 7, 9, 02, 45, tzinfo=pytz.UTC)
+        servic_transfer.push(datetime_process, storage_guid_1, product_guid_mi8, serial_number, quantity_pull, currency_mi8, purchase_cost_mi8)
+        self.assertEqual(1, PlanFactEvent.count_product([storage_guid_1], [product_guid_mi8]))
+        #self.assertEqual(1, PlanFactEvent.count_product_with_serial_number([storage_guid_1], [product_guid_mi8]))
+        # так как одновремменно на один склад добавили дважды товар с одиним серийным номером
+        self.assertRaises(AssertionError, PlanFactEvent.count_product_with_serial_number, [storage_guid_1], [product_guid_mi8])
+
         for e in PlanFactEvent.objects.all():
             print e
 

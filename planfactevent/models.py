@@ -66,7 +66,7 @@ class PlanFactEvent(models.Model):
         """
         создает словари по событиям перемещений продуктов.
         """
-        if not plan_fact_events.quantity == 1:
+        if not cls.__is_allow_quantity_for_stock_with_serial_number(plan_fact_events.quantity):
             # серийные товары всегда в колличестве 1
             assert False
         #return {
@@ -89,6 +89,22 @@ class PlanFactEvent(models.Model):
         )
 
     @classmethod
+    def create_stock_with_serial_number_v2(cls, product_guid, serial_number, quantity, currency, price):
+        """
+        создает словари по событиям перемещений продуктов.
+        """
+        if not cls.__is_allow_quantity_for_stock_with_serial_number(quantity):
+            # серийные товары всегда в колличестве 1
+            assert False
+        return (
+            product_guid,
+            serial_number,
+            quantity,
+            currency,
+            price,
+        )
+
+    @classmethod
     def __list_fact_for_storage_guid_product_guid_sort_by_datetime_process(cls, storage_guid, product_guid):
         #plan_fact_events_in = PlanFactEvent.objects.filter(storage_guid=storage_guid, product_guid=product_guid, is_in=True, is_out=False, is_plan=False, is_fact=True)
         #plan_fact_events_out = PlanFactEvent.objects.filter(storage_guid=storage_guid, product_guid=product_guid, is_in=False, is_out=True, is_plan=False, is_fact=True)
@@ -104,31 +120,31 @@ class PlanFactEvent(models.Model):
 
         Только для товаров с серийниками.
         """
-        #stocks_with_serial = set()
-        stocks_with_serial = []
+        #stocks_with_serial_number = set()
+        stocks_with_serial_number = []
         for plan_fact_event in cls.__list_fact_for_storage_guid_product_guid_sort_by_datetime_process(storage_guid, product_guid):
             stock_with_serial_number = cls.__create_stock_with_serial_number(plan_fact_event)
-            #if cls.__create_stock_with_serial_number(plan_fact_event) in stocks_with_serial:
-            if stock_with_serial_number in stocks_with_serial:
+            #if cls.__create_stock_with_serial_number(plan_fact_event) in stocks_with_serial_number:
+            if stock_with_serial_number in stocks_with_serial_number:
                 if plan_fact_event.is_in and not plan_fact_event.is_out:
                     assert False
                 elif not plan_fact_event.is_in and plan_fact_event.is_out:
-                    #stocks_with_serial.remove(cls.__create_stocks_with_serial_number(plan_fact_event))
-                    #stocks_with_serial.remove(stock_with_serial_number)
-                    stocks_with_serial.remove(stock_with_serial_number)
+                    #stocks_with_serial_number.remove(cls.__create_stocks_with_serial_number(plan_fact_event))
+                    #stocks_with_serial_number.remove(stock_with_serial_number)
+                    stocks_with_serial_number.remove(stock_with_serial_number)
                 else:
                     assert False
             else:
                 if plan_fact_event.is_in and not plan_fact_event.is_out:
-                    #stocks_with_serial.add(cls.__create_stocks_with_serial_number(plan_fact_event))
-                    #stocks_with_serial.add(stock_with_serial_number)
-                    stocks_with_serial.append(stock_with_serial_number)
+                    #stocks_with_serial_number.add(cls.__create_stocks_with_serial_number(plan_fact_event))
+                    #stocks_with_serial_number.add(stock_with_serial_number)
+                    stocks_with_serial_number.append(stock_with_serial_number)
                 elif not plan_fact_event.is_in and plan_fact_event.is_out:
+                    # предполагается что всега в системе только положительные остатки
                     assert False
                 else:
                     assert False
-        return list(stocks_with_serial)
-
+        return list(stocks_with_serial_number)
 
     @classmethod
     def count_product_with_serial_number(cls, storage_guids, product_guids):
@@ -188,6 +204,12 @@ class PlanFactEvent(models.Model):
         if quantity < 0:
             assert False
         return quantity
+
+    @classmethod
+    def __is_allow_quantity_for_stock_with_serial_number(cls, quantity):
+        if not quantity == 1:
+            return False
+        return True
 
     @staticmethod
     def push_stocks(datetime_process, storage_guid, product_guid, quantity, currency, price):
@@ -318,6 +340,12 @@ class PlanFactEvent(models.Model):
             self.invoice_guid, self.datetime_process, self.product_guid, self.serial_number, self.quantity, self.storage_guid, self.transport_guid, self.currency, self.price)
 
 class ServiceTransferProductFromTo(object):
+    """
+    Будет ли обект данного класа следить о целостности всех инвариантов?
+        можно использовать два клааса один с отслеживанием другой без.
+        Отслеживать можно что товар нелдьзя списато до того как зачислить,
+            При таком подходе отирцательные остатки не возможны.
+    """
     def move(self, product_guid, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival):
         #Получить столько информаци по имеющимся сейчас релальным товарам на складе чтобы потом их же списать, транспортировать и принять уже на другом.
         # транзакция с локом на чтение конкртеных записей, нужна для того чтобы при вытаскиваннии из событий того что приняли и хотим сейчас перевести. 
@@ -349,4 +377,17 @@ class ServiceTransferProductFromTo(object):
             PlanFactEvent.push_stocks_witn_serial_number(datetime_arrival, storage_arrival_guid, stock_with_serial_number)
         #finish transaction
 
+    def pull(self, datetime_process, storage_guid, product_guid, serial_number, quantity, currency, price):
+        """
+        Данный сепрвис не просто забирает с склада товар, а он еще и проверяем достаточно ли его.
+            А точно он долже быть частью работы по сохраннию событий?
+            Возможно события просто надо уметь сохранять. Не зависимо от текущего состояния.
+                Потому что это лишь модель и ее нельзя быть уверенным что она с рельностью не разехалсь.
+        """
+        stock = PlanFactEvent.create_stock_with_serial_number_v2(product_guid, serial_number, quantity, currency, price)
+        PlanFactEvent.pull_stocks_witn_serial_number(datetime_process, storage_guid, stock)
+
+    def push(self, datetime_process, storage_guid, product_guid, serial_number, quantity, currency, price):
+        stock = PlanFactEvent.create_stock_with_serial_number_v2(product_guid, serial_number, quantity, currency, price)
+        PlanFactEvent.push_stocks_witn_serial_number(datetime_process, storage_guid, stock)
 
