@@ -94,7 +94,7 @@ class PlanFactEvent(models.Model):
         #plan_fact_events_out = PlanFactEvent.objects.filter(storage_guid=storage_guid, product_guid=product_guid, is_in=False, is_out=True, is_plan=False, is_fact=True)
         #return plan_fact_events_in + plan_fact_events_out
         #return PlanFactEvent.objects.filter(storage_guid=storage_guid, product_guid=product_guid, is_plan=False, is_fact=True).sort_by('datetime_process')
-        return PlanFactEvent.objects.filter(storage_guid=storage_guid, product_guid=product_guid, is_plan=False, is_fact=True).order_by('datetime_process')
+        return PlanFactEvent.objects.filter(storage_guid=storage_guid, product_guid=product_guid, is_plan=False, is_fact=True).order_by('datetime_process','product_guid','serial_number','currency','-price','quantity')
 
     @classmethod
     def stocks_with_serial_number_readey_for_move(cls, storage_guid, product_guid):
@@ -104,7 +104,8 @@ class PlanFactEvent(models.Model):
 
         Только для товаров с серийниками.
         """
-        stocks_with_serial = set()
+        #stocks_with_serial = set()
+        stocks_with_serial = []
         for plan_fact_event in cls.__list_fact_for_storage_guid_product_guid_sort_by_datetime_process(storage_guid, product_guid):
             stock_with_serial_number = cls.__create_stock_with_serial_number(plan_fact_event)
             #if cls.__create_stock_with_serial_number(plan_fact_event) in stocks_with_serial:
@@ -113,13 +114,15 @@ class PlanFactEvent(models.Model):
                     assert False
                 elif not plan_fact_event.is_in and plan_fact_event.is_out:
                     #stocks_with_serial.remove(cls.__create_stocks_with_serial_number(plan_fact_event))
+                    #stocks_with_serial.remove(stock_with_serial_number)
                     stocks_with_serial.remove(stock_with_serial_number)
                 else:
                     assert False
             else:
                 if plan_fact_event.is_in and not plan_fact_event.is_out:
                     #stocks_with_serial.add(cls.__create_stocks_with_serial_number(plan_fact_event))
-                    stocks_with_serial.add(stock_with_serial_number)
+                    #stocks_with_serial.add(stock_with_serial_number)
+                    stocks_with_serial.append(stock_with_serial_number)
                 elif not plan_fact_event.is_in and plan_fact_event.is_out:
                     assert False
                 else:
@@ -307,7 +310,12 @@ class PlanFactEvent(models.Model):
     #    cls.push_stocks(datetime_arrival, storage_guid_arrival, product_guid, quantity, currency, price)
 
     def __unicode__(self):
-        return u"id: %s %s %s %s %s %s %s product_guid: %s %s %s storage_guid: %s %s %s %s" % (self.id, self.is_plan, self.is_fact, self.is_in, self.is_out, self.invoice_guid, self.datetime_process, self.product_guid, self.serial_number, self.quantity, self.storage_guid, self.transport_guid, self.currency, self.price)
+        #return u"id: %s %s %s %s %s %s %s product_guid: %s %s %s storage_guid: %s %s %s %s" % (self.id, self.is_plan, self.is_fact, self.is_in, self.is_out, self.invoice_guid, self.datetime_process, self.product_guid, self.serial_number, self.quantity, self.storage_guid, self.transport_guid, self.currency, self.price)
+        return u"id: %s %s %s %s %s product_guid: %s S\\N: %s quantity: %s storage_guid: %s transport_guid: %s %s %s" % (
+            self.id,
+            'Plan' if self.is_plan and not self.is_fact else 'Fact' if not self.is_plan and self.is_fact else 'Error',
+            'In' if self.is_in and not self.is_out else 'Out' if not self.is_in and self.is_out else 'Error',
+            self.invoice_guid, self.datetime_process, self.product_guid, self.serial_number, self.quantity, self.storage_guid, self.transport_guid, self.currency, self.price)
 
 class ServiceTransferProductFromTo(object):
     def move(self, product_guid, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival):

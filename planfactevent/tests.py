@@ -9,6 +9,8 @@ import time
 import pprint
 from decimal import Decimal
 from django.utils import timezone
+import datetime
+import pytz
 
 class TestEStorage(TestCase):
     def setUp(self):
@@ -121,7 +123,7 @@ class TestEStorage(TestCase):
 
 
     def test_transfer(self):
-        datetime_process = timezone.now()
+        #datetime_process = timezone.now()
         self.assertEqual(0, PlanFactEvent.count_product([], []))
         self.assertEqual(0, PlanFactEvent.count_product_with_serial_number([], []))
 
@@ -135,18 +137,20 @@ class TestEStorage(TestCase):
         purchase_cost_mi8 = 105.1
         currency_mi8 = "USD"
 
+        datetime_process = datetime.datetime(2001, 1, 1, 12, 30, 00, tzinfo=pytz.UTC)
+
         #for i in range(0, quantity_mi8):
         #    plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1000 + i, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
-        plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1001, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
-        plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1002, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
-        plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1003, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
-        plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1004, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
-        plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1005, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
-        plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1006, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
-        plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1007, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
-        plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1008, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
-        plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1009, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
-        plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1010, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(datetime_process=datetime_process, storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1001, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(datetime_process=datetime_process, storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1002, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(datetime_process=datetime_process, storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1003, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(datetime_process=datetime_process, storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1004, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(datetime_process=datetime_process, storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1005, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(datetime_process=datetime_process, storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1006, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(datetime_process=datetime_process, storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1007, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(datetime_process=datetime_process, storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1008, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(datetime_process=datetime_process, storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1009, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(datetime_process=datetime_process, storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1010, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
         self.assertEqual(10, PlanFactEvent.count_product([storage_depart_guid], [product_guid_mi8]))
         self.assertEqual(10, PlanFactEvent.count_product_with_serial_number([storage_depart_guid], [product_guid_mi8]))
         self.assertEqual(0, PlanFactEvent.count_product([storage_arrival_guid], [product_guid_mi8]))
@@ -154,8 +158,10 @@ class TestEStorage(TestCase):
 
         quantity_for_transfer = 3
         transport_guid = 1
-        datetime_depart = timezone.now() #XXX
-        datetime_arrival = timezone.now() #XXX
+        #datetime_depart = timezone.now() #XXX
+        #datetime_arrival = timezone.now() #XXX
+        datetime_depart = datetime.datetime(2019, 8, 1, 9, 15, 00, tzinfo=pytz.UTC)
+        datetime_arrival = datetime.datetime(2019, 8, 5, 14, 30, 00, tzinfo=pytz.UTC)
         servic_transfer.move(product_guid_mi8, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival)
 
         self.assertEqual(7, PlanFactEvent.count_product([storage_depart_guid], [product_guid_mi8]))
@@ -163,10 +169,12 @@ class TestEStorage(TestCase):
         self.assertEqual(3, PlanFactEvent.count_product([storage_arrival_guid], [product_guid_mi8]))
         self.assertEqual(3, PlanFactEvent.count_product_with_serial_number([storage_arrival_guid], [product_guid_mi8]))
 
-        plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1011, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
-        plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1012, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
-        plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1013, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
-        plan_fact_event = PlanFactEvent.objects.create(storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1014, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        purchase_cost_mi8 = 124.1
+        datetime_process = datetime.datetime(2000, 2, 22, 12, 30, 00, tzinfo=pytz.UTC)
+        plan_fact_event = PlanFactEvent.objects.create(datetime_process=datetime_process, storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1011, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(datetime_process=datetime_process, storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1012, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(datetime_process=datetime_process, storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1013, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(datetime_process=datetime_process, storage_guid=storage_depart_guid, product_guid=product_guid_mi8, serial_number=1014, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
 
         self.assertEqual(11, PlanFactEvent.count_product([storage_depart_guid], [product_guid_mi8]))
         self.assertEqual(11, PlanFactEvent.count_product_with_serial_number([storage_depart_guid], [product_guid_mi8]))
@@ -174,6 +182,9 @@ class TestEStorage(TestCase):
         self.assertEqual(3, PlanFactEvent.count_product_with_serial_number([storage_arrival_guid], [product_guid_mi8]))
 
         quantity_for_transfer = 10
+        #datetime_process = datetime.datetime(2000, 1, 1, 12, 30, 00, tzinfo=pytz.UTC)
+        datetime_depart = datetime.datetime(2019, 8, 6, 9, 15, 00, tzinfo=pytz.UTC)
+        datetime_arrival = datetime.datetime(2019, 8, 11, 14, 30, 00, tzinfo=pytz.UTC)
         servic_transfer.move(product_guid_mi8, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival)
 
         self.assertEqual(1, PlanFactEvent.count_product([storage_depart_guid], [product_guid_mi8]))
