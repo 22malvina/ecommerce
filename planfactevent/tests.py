@@ -182,7 +182,6 @@ class TestEStorage(TestCase):
         self.assertEqual(3, PlanFactEvent.count_product_with_serial_number([storage_arrival_guid], [product_guid_mi8]))
 
         quantity_for_transfer = 10
-        #datetime_process = datetime.datetime(2000, 1, 1, 12, 30, 00, tzinfo=pytz.UTC)
         datetime_depart = datetime.datetime(2019, 8, 6, 9, 15, 00, tzinfo=pytz.UTC)
         datetime_arrival = datetime.datetime(2019, 8, 11, 14, 30, 00, tzinfo=pytz.UTC)
         servic_transfer.move(product_guid_mi8, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival)
@@ -192,6 +191,10 @@ class TestEStorage(TestCase):
         self.assertEqual(13, PlanFactEvent.count_product([storage_arrival_guid], [product_guid_mi8]))
         self.assertEqual(13, PlanFactEvent.count_product_with_serial_number([storage_arrival_guid], [product_guid_mi8]))
 
+        quantity_for_transfer = 5
+        datetime_depart = datetime.datetime(2019, 8, 6, 9, 15, 00, tzinfo=pytz.UTC)
+        datetime_arrival = datetime.datetime(2019, 8, 11, 14, 30, 00, tzinfo=pytz.UTC)
+        self.assertRaises(AssertionError, servic_transfer.move, product_guid_mi8, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival)
 
         for e in PlanFactEvent.objects.all():
             print e

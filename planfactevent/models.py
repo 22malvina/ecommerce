@@ -328,6 +328,9 @@ class ServiceTransferProductFromTo(object):
         #получить сейрийники подходящих товаров
         stocks_with_serial_number_readey_for_move = PlanFactEvent.stocks_with_serial_number_readey_for_move(storage_depart_guid, product_guid)
         #выбрать столько сколько нужно.
+        if len(stocks_with_serial_number_readey_for_move) < quantity_for_transfer:
+            print 'Error: Has not stocks nead. In stock %s nead stock %s' % (len(stocks_with_serial_number_readey_for_move), quantity_for_transfer)
+            assert False
         stocks_with_serial_number = stocks_with_serial_number_readey_for_move[:quantity_for_transfer]
         #залочить их для других перемещений
         #    если не получилось залочить получить другие без этих
