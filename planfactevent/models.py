@@ -46,115 +46,6 @@ class PlanFactEvent(models.Model):
 
     #Repository
 
-    #@classmethod
-    #def list(cls, storage_guids, product_guids):
-    #    if product_guids and storage_guids:
-    #        plan_fact_events_in = PlanFactEvent.objects.filter(storage_guid__in=storage_guids, product_guid__in=product_guids, is_in=True, is_out=False, is_plan=False, is_fact=True)
-    #        plan_fact_events_out = PlanFactEvent.objects.filter(storage_guid__in=storage_guids, product_guid__in=product_guids, is_in=False, is_out=True, is_plan=False, is_fact=True)
-    #    elif product_guids and not storage_guids:
-    #        plan_fact_events_in = PlanFactEvent.objects.filter(product_guid__in=product_guids, is_in=True, is_out=False, is_plan=False, is_fact=True)
-    #        plan_fact_events_out = PlanFactEvent.objects.filter(product_guid__in=product_guids, is_in=False, is_out=True, is_plan=False, is_fact=True)
-    #    elif not product_guids and storage_guids:
-    #        plan_fact_events_in = PlanFactEvent.objects.filter(storage_guid__in=storage_guids, is_in=True, is_out=False, is_plan=False, is_fact=True)
-    #        plan_fact_events_out = PlanFactEvent.objects.filter(storage_guid__in=storage_guids, is_in=False, is_out=True, is_plan=False, is_fact=True)
-    #    else:
-    #        plan_fact_events_in = PlanFactEvent.objects.filter(is_in=True, is_out=False, is_plan=False, is_fact=True)
-    #        plan_fact_events_out = PlanFactEvent.objects.filter(is_in=False, is_out=True, is_plan=False, is_fact=True)
-
-    @classmethod
-    def __create_stock_with_serial_number(cls, plan_fact_events):
-        """
-        создает словари по событиям перемещений продуктов.
-        """
-        if not cls.__is_allow_quantity_for_stock_with_serial_number(plan_fact_events.quantity):
-            # серийные товары всегда в колличестве 1
-            assert False
-        #return {
-        #    #'is_in': plan_fact_event.is_in,
-        #    #'is_out': plan_fact_event.is_out,
-        #    #'datetime_process': plan_fact_event.datetime_process,
-        #    'product_guid': plan_fact_events.product_guid,
-        #    'serial_number': plan_fact_events.serial_number,
-        #    #'storage_guid': storage_guid,
-        #    'quantity': plan_fact_events.quantity,
-        #    'currency': plan_fact_events.currency,
-        #    'price': plan_fact_events.price,
-        #}
-        return (
-            plan_fact_events.product_guid,
-            plan_fact_events.serial_number,
-            plan_fact_events.quantity,
-            plan_fact_events.currency,
-            plan_fact_events.price,
-        )
-
-    @classmethod
-    def create_stock_with_serial_number_v2(cls, product_guid, serial_number, quantity, currency, price):
-        """
-        создает словари по событиям перемещений продуктов.
-        """
-        if not cls.__is_allow_quantity_for_stock_with_serial_number(quantity):
-            # серийные товары всегда в колличестве 1
-            assert False
-        return (
-            product_guid,
-            serial_number,
-            quantity,
-            currency,
-            price,
-        )
-
-    @classmethod
-    def __list_fact_for_storage_guid_product_guid_sort_by_datetime_process(cls, storage_guid, product_guid):
-        #plan_fact_events_in = PlanFactEvent.objects.filter(storage_guid=storage_guid, product_guid=product_guid, is_in=True, is_out=False, is_plan=False, is_fact=True)
-        #plan_fact_events_out = PlanFactEvent.objects.filter(storage_guid=storage_guid, product_guid=product_guid, is_in=False, is_out=True, is_plan=False, is_fact=True)
-        #return plan_fact_events_in + plan_fact_events_out
-        #return PlanFactEvent.objects.filter(storage_guid=storage_guid, product_guid=product_guid, is_plan=False, is_fact=True).sort_by('datetime_process')
-        return PlanFactEvent.objects.filter(storage_guid=storage_guid, product_guid=product_guid, is_plan=False, is_fact=True).order_by('datetime_process','product_guid','serial_number','currency','-price','quantity')
-
-    @classmethod
-    def stocks_with_serial_number_readey_for_move(cls, storage_guid, product_guid):
-        """
-        Простое перемещенеи между складами организации, поэтому изменния цены ен происходит.
-        В дальнейшем можно будет проводить оперцию по изменрию цены при порче позиции при транспортировке или ...
-
-        Только для товаров с серийниками.
-        """
-        #stocks_with_serial_number = set()
-        stocks_with_serial_number = []
-        for plan_fact_event in cls.__list_fact_for_storage_guid_product_guid_sort_by_datetime_process(storage_guid, product_guid):
-            stock_with_serial_number = cls.__create_stock_with_serial_number(plan_fact_event)
-            #if cls.__create_stock_with_serial_number(plan_fact_event) in stocks_with_serial_number:
-            if stock_with_serial_number in stocks_with_serial_number:
-                if plan_fact_event.is_in and not plan_fact_event.is_out:
-                    assert False
-                elif not plan_fact_event.is_in and plan_fact_event.is_out:
-                    #stocks_with_serial_number.remove(cls.__create_stocks_with_serial_number(plan_fact_event))
-                    #stocks_with_serial_number.remove(stock_with_serial_number)
-                    stocks_with_serial_number.remove(stock_with_serial_number)
-                else:
-                    assert False
-            else:
-                if plan_fact_event.is_in and not plan_fact_event.is_out:
-                    #stocks_with_serial_number.add(cls.__create_stocks_with_serial_number(plan_fact_event))
-                    #stocks_with_serial_number.add(stock_with_serial_number)
-                    stocks_with_serial_number.append(stock_with_serial_number)
-                elif not plan_fact_event.is_in and plan_fact_event.is_out:
-                    # предполагается что всега в системе только положительные остатки
-                    assert False
-                else:
-                    assert False
-        return list(stocks_with_serial_number)
-
-    @classmethod
-    def count_product_with_serial_number(cls, storage_guids, product_guids):
-        stocks_with_serial_number = []
-        for storage_guid in storage_guids:
-            for product_guid in product_guids:
-                for stock_with_serial_number in cls.stocks_with_serial_number_readey_for_move(storage_guid, product_guid):
-                    stocks_with_serial_number.append(stock_with_serial_number)
-        return len(stocks_with_serial_number)
-
     @staticmethod
     def count_product(storage_guids, product_guids):
         quantity = 0
@@ -206,51 +97,110 @@ class PlanFactEvent(models.Model):
         return quantity
 
     @classmethod
+    def count_product_with_serial_number(cls, storage_guids, product_guids):
+        stocks_with_serial_number = []
+        for storage_guid in storage_guids:
+            for product_guid in product_guids:
+                for stock_with_serial_number in cls.stocks_with_serial_number_readey_for_move(storage_guid, product_guid):
+                    stocks_with_serial_number.append(stock_with_serial_number)
+        return len(stocks_with_serial_number)
+
+    @classmethod
+    def __create_stock_with_serial_number(cls, plan_fact_events):
+        """
+        создает словари по событиям перемещений продуктов.
+        """
+        if not cls.__is_allow_quantity_for_stock_with_serial_number(plan_fact_events.quantity):
+            # серийные товары всегда в колличестве 1
+            assert False
+        #return {
+        #    #'is_in': plan_fact_event.is_in,
+        #    #'is_out': plan_fact_event.is_out,
+        #    #'datetime_process': plan_fact_event.datetime_process,
+        #    'product_guid': plan_fact_events.product_guid,
+        #    'serial_number': plan_fact_events.serial_number,
+        #    #'storage_guid': storage_guid,
+        #    'quantity': plan_fact_events.quantity,
+        #    'currency': plan_fact_events.currency,
+        #    'price': plan_fact_events.price,
+        #}
+        return (
+            plan_fact_events.product_guid,
+            plan_fact_events.serial_number,
+            plan_fact_events.quantity,
+            plan_fact_events.currency,
+            plan_fact_events.price,
+        )
+
+    @classmethod
+    def create_stock_with_serial_number_v2(cls, product_guid, serial_number, quantity, currency, price):
+        """
+        создает словари по событиям перемещений продуктов.
+        """
+        if not cls.__is_allow_quantity_for_stock_with_serial_number(quantity):
+            # серийные товары всегда в колличестве 1
+            assert False
+        return (
+            product_guid,
+            serial_number,
+            quantity,
+            currency,
+            price,
+        )
+
+    @classmethod
     def __is_allow_quantity_for_stock_with_serial_number(cls, quantity):
         if not quantity == 1:
             return False
         return True
 
-    @staticmethod
-    def push_stocks(datetime_process, storage_guid, product_guid, quantity, currency, price):
-        plan_fact_event = PlanFactEvent.objects.create(
-            datetime_process=datetime_process,
-            storage_guid=storage_guid,
-            product_guid=product_guid,
-            quantity=quantity,
-            currency=currency,
-            price=price,
-            is_in=True,
-            is_out=False,
-            is_plan=False,
-            is_fact=True)
+    #@classmethod
+    #def list(cls, storage_guids, product_guids):
+    #    if product_guids and storage_guids:
+    #        plan_fact_events_in = PlanFactEvent.objects.filter(storage_guid__in=storage_guids, product_guid__in=product_guids, is_in=True, is_out=False, is_plan=False, is_fact=True)
+    #        plan_fact_events_out = PlanFactEvent.objects.filter(storage_guid__in=storage_guids, product_guid__in=product_guids, is_in=False, is_out=True, is_plan=False, is_fact=True)
+    #    elif product_guids and not storage_guids:
+    #        plan_fact_events_in = PlanFactEvent.objects.filter(product_guid__in=product_guids, is_in=True, is_out=False, is_plan=False, is_fact=True)
+    #        plan_fact_events_out = PlanFactEvent.objects.filter(product_guid__in=product_guids, is_in=False, is_out=True, is_plan=False, is_fact=True)
+    #    elif not product_guids and storage_guids:
+    #        plan_fact_events_in = PlanFactEvent.objects.filter(storage_guid__in=storage_guids, is_in=True, is_out=False, is_plan=False, is_fact=True)
+    #        plan_fact_events_out = PlanFactEvent.objects.filter(storage_guid__in=storage_guids, is_in=False, is_out=True, is_plan=False, is_fact=True)
+    #    else:
+    #        plan_fact_events_in = PlanFactEvent.objects.filter(is_in=True, is_out=False, is_plan=False, is_fact=True)
+    #        plan_fact_events_out = PlanFactEvent.objects.filter(is_in=False, is_out=True, is_plan=False, is_fact=True)
+
+    @classmethod
+    def __list_for_fact_storage_guid_product_guid_sort_by_datetime_process(cls, storage_guid, product_guid):
+        #plan_fact_events_in = PlanFactEvent.objects.filter(storage_guid=storage_guid, product_guid=product_guid, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        #plan_fact_events_out = PlanFactEvent.objects.filter(storage_guid=storage_guid, product_guid=product_guid, is_in=False, is_out=True, is_plan=False, is_fact=True)
+        #return plan_fact_events_in + plan_fact_events_out
+        #return PlanFactEvent.objects.filter(storage_guid=storage_guid, product_guid=product_guid, is_plan=False, is_fact=True).sort_by('datetime_process')
+        return PlanFactEvent.objects.filter(storage_guid=storage_guid, product_guid=product_guid, is_plan=False, is_fact=True).order_by('datetime_process','product_guid','serial_number','currency','-price','quantity')
 
     @staticmethod
-    def push_stocks_witn_serial_number(datetime_process, storage_guid, stocks_with_serial_number):
-        #plan_fact_event = PlanFactEvent.objects.create(
-        #    datetime_process = datetime_process,
-        #    storage_guid = storage_guid,
-        #    product_guid = stocks_with_serial_number['product_guid'],
-        #    serial_number = stocks_with_serial_number['serial_number'],
-        #    quantity = stocks_with_serial_number['quantity'],
-        #    currency = stocks_with_serial_number['currency'],
-        #    price = stocks_with_serial_number['price'],
-        #    is_in = True,
-        #    is_out = False,
-        #    is_plan = False,
-        #    is_fact = True)
-        plan_fact_event = PlanFactEvent.objects.create(
-            datetime_process = datetime_process,
-            storage_guid = storage_guid,
-            product_guid = stocks_with_serial_number[0],
-            serial_number = stocks_with_serial_number[1],
-            quantity = stocks_with_serial_number[2],
-            currency = stocks_with_serial_number[3],
-            price = stocks_with_serial_number[4],
-            is_in = True,
-            is_out = False,
-            is_plan = False,
-            is_fact = True)
+    def product_guids_by_storage_guids(storage_guids):
+        """
+        Метод работает не коректно, он показыват все продукты которые были и есть на складе.
+        Нужно чтобы только те которые сейчас в наличии.
+        """
+        #storage_guids_product_guids_quantity = {}
+        product_guids = set()
+        if storage_guids:
+            for plan_fact_event in PlanFactEvent.objects.filter(storage_guid__in=storage_guids, is_in=True, is_out=False, is_plan=False, is_fact=True):
+                #storage_guids_product_guids_quantity[plan_fact_event.storage_guid].set(plan_fact_event.product_guid, 0)
+                product_guids.add(plan_fact_event.product_guid)
+            for plan_fact_event in PlanFactEvent.objects.filter(storage_guid__in=storage_guids, is_in=False, is_out=True, is_plan=False, is_fact=True):
+                #product_guids.add(fact_event.product_guid)
+                #product_guids.add(plan_fact_event.product_guid)
+                pass
+        else:
+            for plan_fact_event in PlanFactEvent.objects.filter(is_in=True, is_out=False, is_plan=False, is_fact=True):
+                #quantity += plan_fact_event.quantity
+                product_guids.add(plan_fact_event.product_guid)
+            for plan_fact_event in PlanFactEvent.objects.filter(is_in=False, is_out=True, is_plan=False, is_fact=True):
+                #quantity -= plan_fact_event.quantity
+                pass
+        return list(product_guids)
 
     @staticmethod
     def pull_stocks(datetime_process, storage_guid, product_guid, quantity, currency, price):
@@ -295,36 +245,88 @@ class PlanFactEvent(models.Model):
 
     @staticmethod
     def pull_transfer(datetime_process, transport_guid, stocks_with_serial_number):
+        print 'Nead same code'
         pass
+
+    @staticmethod
+    def push_stocks(datetime_process, storage_guid, product_guid, quantity, currency, price):
+        plan_fact_event = PlanFactEvent.objects.create(
+            datetime_process=datetime_process,
+            storage_guid=storage_guid,
+            product_guid=product_guid,
+            quantity=quantity,
+            currency=currency,
+            price=price,
+            is_in=True,
+            is_out=False,
+            is_plan=False,
+            is_fact=True)
+
+    @staticmethod
+    def push_stocks_witn_serial_number(datetime_process, storage_guid, stocks_with_serial_number):
+        #plan_fact_event = PlanFactEvent.objects.create(
+        #    datetime_process = datetime_process,
+        #    storage_guid = storage_guid,
+        #    product_guid = stocks_with_serial_number['product_guid'],
+        #    serial_number = stocks_with_serial_number['serial_number'],
+        #    quantity = stocks_with_serial_number['quantity'],
+        #    currency = stocks_with_serial_number['currency'],
+        #    price = stocks_with_serial_number['price'],
+        #    is_in = True,
+        #    is_out = False,
+        #    is_plan = False,
+        #    is_fact = True)
+        plan_fact_event = PlanFactEvent.objects.create(
+            datetime_process = datetime_process,
+            storage_guid = storage_guid,
+            product_guid = stocks_with_serial_number[0],
+            serial_number = stocks_with_serial_number[1],
+            quantity = stocks_with_serial_number[2],
+            currency = stocks_with_serial_number[3],
+            price = stocks_with_serial_number[4],
+            is_in = True,
+            is_out = False,
+            is_plan = False,
+            is_fact = True)
 
     @staticmethod
     def push_transfer(datetime_process, transport_guid, stocks_with_serial_number):
+        print 'Nead same code'
         pass
 
-    @staticmethod
-    def product_guids_by_storage_guids(storage_guids):
+    @classmethod
+    def stocks_with_serial_number_readey_for_move(cls, storage_guid, product_guid):
         """
-        Метод работает не коректно, он показыват все продукты которые были и есть на складе.
-        Нужно чтобы только те которые сейчас в наличии.
+        Простое перемещенеи между складами организации, поэтому изменния цены ен происходит.
+        В дальнейшем можно будет проводить оперцию по изменрию цены при порче позиции при транспортировке или ...
+
+        Только для товаров с серийниками.
         """
-        #storage_guids_product_guids_quantity = {}
-        product_guids = set()
-        if storage_guids:
-            for plan_fact_event in PlanFactEvent.objects.filter(storage_guid__in=storage_guids, is_in=True, is_out=False, is_plan=False, is_fact=True):
-                #storage_guids_product_guids_quantity[plan_fact_event.storage_guid].set(plan_fact_event.product_guid, 0)
-                product_guids.add(plan_fact_event.product_guid)
-            for plan_fact_event in PlanFactEvent.objects.filter(storage_guid__in=storage_guids, is_in=False, is_out=True, is_plan=False, is_fact=True):
-                #product_guids.add(fact_event.product_guid)
-                #product_guids.add(plan_fact_event.product_guid)
-                pass
-        else:
-            for plan_fact_event in PlanFactEvent.objects.filter(is_in=True, is_out=False, is_plan=False, is_fact=True):
-                #quantity += plan_fact_event.quantity
-                product_guids.add(plan_fact_event.product_guid)
-            for plan_fact_event in PlanFactEvent.objects.filter(is_in=False, is_out=True, is_plan=False, is_fact=True):
-                #quantity -= plan_fact_event.quantity
-                pass
-        return list(product_guids)
+        #stocks_with_serial_number = set()
+        stocks_with_serial_number = []
+        for plan_fact_event in cls.__list_for_fact_storage_guid_product_guid_sort_by_datetime_process(storage_guid, product_guid):
+            stock_with_serial_number = cls.__create_stock_with_serial_number(plan_fact_event)
+            #if cls.__create_stock_with_serial_number(plan_fact_event) in stocks_with_serial_number:
+            if stock_with_serial_number in stocks_with_serial_number:
+                if plan_fact_event.is_in and not plan_fact_event.is_out:
+                    assert False
+                elif not plan_fact_event.is_in and plan_fact_event.is_out:
+                    #stocks_with_serial_number.remove(cls.__create_stocks_with_serial_number(plan_fact_event))
+                    #stocks_with_serial_number.remove(stock_with_serial_number)
+                    stocks_with_serial_number.remove(stock_with_serial_number)
+                else:
+                    assert False
+            else:
+                if plan_fact_event.is_in and not plan_fact_event.is_out:
+                    #stocks_with_serial_number.add(cls.__create_stocks_with_serial_number(plan_fact_event))
+                    #stocks_with_serial_number.add(stock_with_serial_number)
+                    stocks_with_serial_number.append(stock_with_serial_number)
+                elif not plan_fact_event.is_in and plan_fact_event.is_out:
+                    # предполагается что всега в системе только положительные остатки
+                    assert False
+                else:
+                    assert False
+        return list(stocks_with_serial_number)
 
     #@classmethod
     #def transfer_plan(cls, product_guid, quantity, currency, price, storage_guid_depart, datetime_depart, storage_guid_arrival, datetime_arrival):
