@@ -471,3 +471,35 @@ class ServiceTransferProductFromTo(object):
         return list(stocks)
 
 
+class ServiceOrder(object):
+    """
+    Сервис будет создавать заказы.
+        В дальнешем еще перемезения для их обеспечения.
+
+        Чтобы создать заказ клиента на покупку телефона и чтобы он приехал на pickup point для его получения 23.09.2018 нужно:
+        1) просчитать - проверить что мы можем доставить на эту точку телефон.
+        2) сформировать план по перемещению телефона на эту точку
+        3) сформировать план на получить деньги от клиента.
+        4) сформировать план на выдачу клиенту и смену владельца товара.
+        5) далее в процессе будут появляться документы подтверждающие действия по плану.
+
+        datetime_pricess - время совершения операции.
+        а время формирования документа можно смотреть в документах.
+        у плановых операций есть время когда они должны быть дективированы. План на год? или не надо так делать?
+        но время когда плановое децствие отменяется перестает "существовать" оно или удаляется, но тогда предыдущие данные изменятся или нужно чтобы окончилось и сразу появился  в замен новый план. Или не появился.
+        Как учесть что заланировано и не сделано от того что запланировано но поменялось?
+    """
+    def __init__(self, service_transfer):
+        self.__service_transfer = service_transfer
+
+    def create_order_sale_pickup(self, basket, storage_pickup_guid, datetime_pickup):
+        #if self.__service_transfer.has_basket_on_stocks(basket):
+        #    for item in basket:
+        #        for storage_guid in self.__service_transfer.all_storage_guids():
+        #            if self.__service_transfer.stocks_ready_for_move(storage_guid, product_guid):
+        #                pass
+        #    if self.__service_transfer.is_delivery(basket):
+        #        pass
+        pass
+
+
