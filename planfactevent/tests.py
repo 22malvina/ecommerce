@@ -233,13 +233,40 @@ class TestEStorage(TestCase):
         for e in PlanFactEvent.objects.all():
             print e
 
-    def test_create_order_sale_pickup(self):
+    def test_create_order_sale_pickup_1(self):
+        """
+        Доставка на продукт 1 (телефон Mi8) клиенту 1 на точку получения 3 с склада 1(один из наших поставщиков) через наш промежуточный склад 2.
+        У компании есть транспортное средство 1 (грузовик) ездит 1 раз в день междк складами 1 и 2.
+        А также 2 (автомобиль) которые ездит с 2 на 3.
+        Оба перевозят грузы любых размеров.
+        Пользователь оформил заказ на сайте 2019, 7, 1, 12, 15, 46.
+        А из передложенных дат получения выбрал 2019, 7, 7, 9, 13, 00.
+
+        Задача сразу после создания заказа, у нас в системе, содать план действий по его реализации.
+        Пример плана по движению товара:
+            2019, 7, 1, 16, 00, 00 отгрузка у поставщика с склада 1
+            2019, 7, 1, 16, 00, 00 грузковик 1 принял к перемещению заказ
+            2019, 7, 1, 19, 00, 00 грузковик 1 отгрузил закза
+            2019, 7, 1, 19, 00, 00 склад 2 принял на зхарание заказ
+            2019, 7, 2, 10, 00, 00 склад 2 отгрузил заказ
+            2019, 7, 2, 10, 00, 00 автомобиль 2 приянл заказ к перемещению
+            2019, 7, 2, 11, 00, 00 автомобиль 2 отгрузил закза
+            2019, 7, 2, 11, 00, 00 склад 3 принял на харание заказ
+            2019, 7, 7,  9, 13, 00 склад 3 отгрузил заказ клиенту 1
+            2019, 7, 7,  9, 13, 00 клиенту 1 принял заказ
+        План надо расширить движением денежных средств.
+            ...
+
+        """
         service_transfer = ServiceTransferProductFromTo()
         service_order = ServiceOrder(service_transfer)
         #service_order.create_order_sale_pickup(cargo, )
         basket_1 = []
-        storage_pickup_guid_1 = 1
+        storage_donor_guid_1 = 1
+        storage_guid_2 = 2
+        storage_pickup_guid_3 = 3
         datetime_create_order = datetime.datetime(2019, 7, 1, 12, 15, 46, tzinfo=pytz.UTC)
-        datetime_pickup = datetime.datetime(2019, 7, 7, 9, 03, 00, tzinfo=pytz.UTC)
-        service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_1, datetime_create_order, datetime_pickup)
+        datetime_pickup = datetime.datetime(2019, 7, 7, 9, 13, 00, tzinfo=pytz.UTC)
+
+        service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
 

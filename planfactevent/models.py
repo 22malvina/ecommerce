@@ -418,13 +418,11 @@ class ServiceTransferProductFromTo(object):
                 )
         return items_edge_delivery
 
-    def edge_delivery(self, storage_guid_depart, storage_guid_arrival, transport_guids_allow_for_stock, datetime_start, datetime_pickup):
+    def edge_delivery(self, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
         # Формируем набор перемещений который проходи из с1 в с2 и укладывающийся в нужный времнной диапазон 
         items_edge_delivery = []
         transport_guids = self.service_transfer.transport_guids_delivery_from_storage_to_storage(storage_guid_depart, storage_guid_arrival)
         for transport_guid in transport_guids:
-            if transport_guid not in transport_guids_allow_for_stock:
-                continue
             for item_edge_delivery in self.edge_transport_delivery_from_storage_to_storage_in_datetime_range(transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
                 items_edge_delivery.append(item_edge_delivery)
 
@@ -442,7 +440,7 @@ class ServiceTransferProductFromTo(object):
             for i in range(1,len(chain_storage_delivery)):
                 storage_guid_depart = chain_storage_delivery[0]
                 storage_guid_arrival = chain_storage_delivery[1]
-                items_edge_delivery = self.edge_delivery(storage_guid_depart, storage_guid_arrival, transport_guids_allow_for_stock, datetime_start, datetime_pickup)
+                items_edge_delivery = self.edge_delivery(storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup)
                 items_delivery.append(items_edge_delivery)
 
             # Находим кратчайший маршрут из набора возможных перемещенеий между ребрарами
