@@ -394,41 +394,56 @@ class ServiceTransferProductFromTo(object):
     def all_storage_guids(self):
         return PlanFactEvent.storage_guids()
 
+    def chains_storage_delivery_from_storage_to_storage(self, storage_guid, storage_pickup_guid):
+        return []
 
-    def __edge_delivery(self, storage_guid_depart, storage_guid_arrival, transport_guids_allow_for_stock):
+    def datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_depart):
+        return []
+
+    def datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
+        return []
+
+    def edge_transport_delivery_from_storage_to_storage_in_datetime_range(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
+        items_edge_delivery = []
+        datetimes_depart = self.service_transfer.datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(\
+            transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup)
+        for datetime_depart in datetimes_depart:
+            datetimes_arrival = self.service_transfer.datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(\
+                transport_guid, storage_guid_depart, storage_guid_arrival, datetime_depart)
+            for datetime_arrival in datetimes_arrival:
+                items_edge_delivery.append(
+                    (
+                        storage_guid_depart, datetime_depart, transport_guids, storage_guid_arrival, datetime_arrival,
+                    )
+                )
+        return items_edge_delivery
+
+    def edge_delivery(self, storage_guid_depart, storage_guid_arrival, transport_guids_allow_for_stock, datetime_start, datetime_pickup):
         # Формируем набор перемещений который проходи из с1 в с2 и укладывающийся в нужный времнной диапазон 
-        items_chain_delivery = []
-        transport_guids = self.__service_transfer.transport_guids_delivery_from_storage_to_storage(storage_guid_depart, storage_guid_arrival)
+        items_edge_delivery = []
+        transport_guids = self.service_transfer.transport_guids_delivery_from_storage_to_storage(storage_guid_depart, storage_guid_arrival)
         for transport_guid in transport_guids:
             if transport_guid not in transport_guids_allow_for_stock:
                 continue
-            datetimes_depart = self.__service_transfer.datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(\
-                transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup)
-            for datetime_depart in datetimes_depart:
-                datetimes_arrival = self.__service_transfer.datetimes_arrival_for_delivery_by_transport_from_storage_to_storage(\
-                    transport_guid, storage_guid_depart, storage_guid_arrival, datetime_depart)
-                for datetime_arrival in datetimes_arrival:
-                    items_chain_delivery.append(
-                        (
-                            storage_guid_depart, datetime_depart, transport_guids, storage_guid_arrival, datetime_arrival,
-                        )
-                    )
-        # Если не смогли проехать в по даному участку цепи
-        if not items_chain_delivery:
-            assert False
-        if len(items_chain_delivery) == 0:
-            assert False
-        return items_chain_delivery
+            for item_edge_delivery in self.edge_transport_delivery_from_storage_to_storage_in_datetime_range(transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
+                items_edge_delivery.append(item_edge_delivery)
 
-    def fast_chain(self, storage_guid, storage_pickup_guid, transport_guids_allow_for_stock):
+        # Если не смогли проехать в по даному участку цепи
+        if not items_edge_delivery:
+            assert False
+        if len(items_edge_delivery) == 0:
+            assert False
+        return items_edge_delivery
+
+    def fast_chain(self, storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup):
         chians = []
-        for chain_storage_delivery in self.__service_transfer.chain_storage_delivery_from_storage_to_storage(storage_guid, storage_pickup_guid):
+        for chain_storage_delivery in self.service_transfer.chains_storage_delivery_from_storage_to_storage(storage_guid, storage_pickup_guid):
             items_delivery = []
             for i in range(1,len(chain_storage_delivery)):
                 storage_guid_depart = chain_storage_delivery[0]
                 storage_guid_arrival = chain_storage_delivery[1]
-                items_chain_delivery = self.__edge_delivery(storage_guid_depart, storage_guid_arrival, transport_guids_allow_for_stock)
-                items_delivery.append(items_chain_delivery)
+                items_edge_delivery = self.edge_delivery(storage_guid_depart, storage_guid_arrival, transport_guids_allow_for_stock, datetime_start, datetime_pickup)
+                items_delivery.append(items_edge_delivery)
 
             # Находим кратчайший маршрут из набора возможных перемещенеий между ребрарами
             fast_chain = []
@@ -436,6 +451,7 @@ class ServiceTransferProductFromTo(object):
             for item in items_delivery:
                 if currnet_datetime:
                     filter(lambda i: i[4] > currnet_datetime, item)
+                filter(lambda i: i[2] in transport_guids_allow_for_stock, item)
                 if not item:
                     raise False
                 sorted(item, key=lambda i: i[4])
@@ -583,7 +599,8 @@ class ServiceOrder(object):
                     stocks.append(stock)
         return stocks
 
-    def __generate_plan_event_for_delivery_product_guids_with_quantity_to_client(product_guids_with_quantity, basket, storage_pickup_guid, datetime_start, datetime_pickup):
+    #def __generate_plan_event_for_delivery_product_guids_with_quantity_to_client(self, product_guids_with_quantity, basket, storage_pickup_guid, datetime_start, datetime_pickup):
+    def __generate_plan_event_for_delivery_basket_to_client(self, basket, storage_pickup_guid, datetime_start, datetime_pickup):
         #stocks = self.__list_stocks_for_basket(basket)
 
         groups_events_posible_for_product = {}
@@ -593,10 +610,8 @@ class ServiceOrder(object):
             groups_events_posible = []
             for storage_guid in self.__service_transfer.all_storage_guids():
                 for stock in self.__service_transfer.stocks_ready_for_move(storage_guid, product_guid):
-
                     transport_guids_allow_for_stock = self.__service_transfer.transport_guids_allow_for_stock(stock)
-
-                    chain = self.__service_transfer.fast_chain(self, storage_guid, storage_pickup_guid, transport_guids_allow_for_stock)
+                    chain = self.__service_transfer.fast_chain(storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup)
 
                     #product_guid = stock[0]
                     #quantity_for_transfer = stock[2]
@@ -604,9 +619,6 @@ class ServiceOrder(object):
                     #storage_arrival_guid = storage_pickup_guid
                     #for transport_guid in self.__service_transfer.transport_guids_delivery_form_to(storage_guid, storage_pickup_guid)
                     #self.__service_transfer.move(product_guid, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_pickup_guid, datetime_arrival):
-        return stocks
-
-
 
         plan_events = []
         return plan_events
@@ -643,11 +655,12 @@ class ServiceOrder(object):
     def __is_delivery(self, basket):
         return True
 
-    def create_order_sale_pickup(self, basket, storage_pickup_guid, datetime_pickup):
+    def create_order_sale_pickup(self, basket, storage_pickup_guid, datetime_start, datetime_pickup):
         if self.__has_basket_on_stocks(basket) and self.__is_delivery(basket):
 
-            product_guids_with_quantity = FacrtoryProductGuidWithQuantityFromBasket().create(basket)
-            plan_events = self.__generate_plan_event_for_delivery_product_guids_with_quantity_to_client(product_guids_with_quantity, basket, storage_pickup_guid, datetime_pickup)
+            #product_guids_with_quantity = FacrtoryProductGuidWithQuantityFromBasket().create(basket)
+            #plan_events = self.__generate_plan_event_for_delivery_product_guids_with_quantity_to_client(product_guids_with_quantity, basket, storage_pickup_guid, datetime_pickup)
+            plan_events = self.__generate_plan_event_for_delivery_basket_to_client(basket, storage_pickup_guid, datetime_start, datetime_pickup)
             pass
 
 

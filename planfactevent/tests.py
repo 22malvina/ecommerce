@@ -234,12 +234,12 @@ class TestEStorage(TestCase):
             print e
 
     def test_create_order_sale_pickup(self):
-        
         service_transfer = ServiceTransferProductFromTo()
         service_order = ServiceOrder(service_transfer)
         #service_order.create_order_sale_pickup(cargo, )
         basket_1 = []
         storage_pickup_guid_1 = 1
+        datetime_create_order = datetime.datetime(2019, 7, 1, 12, 15, 46, tzinfo=pytz.UTC)
         datetime_pickup = datetime.datetime(2019, 7, 7, 9, 03, 00, tzinfo=pytz.UTC)
-        service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_1, datetime_pickup)
+        service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_1, datetime_create_order, datetime_pickup)
 
