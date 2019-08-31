@@ -3,6 +3,8 @@ from django.db import models
 #from django.db.models import Count, Min, Sum, Avg
 from django.db.models import Sum
 
+import datetime
+import pytz
 
 class PlanFactEvent(models.Model):
     """
@@ -392,36 +394,40 @@ class ServiceTransferProductFromTo(object):
     """
 
     def all_storage_guids(self):
-        return PlanFactEvent.storage_guids()
+        #return PlanFactEvent.storage_guids()
+        return [1,2,3]
 
     def chains_storage_delivery_from_storage_to_storage(self, storage_guid, storage_pickup_guid):
-        return []
+        return [[1,2,3]]
 
     def datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_depart):
-        return []
+        return [datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC)]
 
     def datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
-        return []
+        return [datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC)]
 
     def edge_transport_delivery_from_storage_to_storage_in_datetime_range(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
         items_edge_delivery = []
-        datetimes_depart = self.service_transfer.datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(\
+        datetimes_depart = self.datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(\
             transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup)
         for datetime_depart in datetimes_depart:
-            datetimes_arrival = self.service_transfer.datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(\
+            datetimes_arrival = self.datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(\
                 transport_guid, storage_guid_depart, storage_guid_arrival, datetime_depart)
             for datetime_arrival in datetimes_arrival:
                 items_edge_delivery.append(
                     (
-                        storage_guid_depart, datetime_depart, transport_guids, storage_guid_arrival, datetime_arrival,
+                        storage_guid_depart, datetime_depart, transport_guid, storage_guid_arrival, datetime_arrival,
                     )
                 )
         return items_edge_delivery
 
+    def edge_transport_guids_delivery_from_storage_to_storage(self, storage_guid_depart, storage_guid_arrival):
+        return [1]
+
     def edge_delivery(self, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
         # Формируем набор перемещений который проходи из с1 в с2 и укладывающийся в нужный времнной диапазон 
         items_edge_delivery = []
-        transport_guids = self.service_transfer.transport_guids_delivery_from_storage_to_storage(storage_guid_depart, storage_guid_arrival)
+        transport_guids = self.edge_transport_guids_delivery_from_storage_to_storage(storage_guid_depart, storage_guid_arrival)
         for transport_guid in transport_guids:
             for item_edge_delivery in self.edge_transport_delivery_from_storage_to_storage_in_datetime_range(transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
                 items_edge_delivery.append(item_edge_delivery)
@@ -435,7 +441,7 @@ class ServiceTransferProductFromTo(object):
 
     def fast_chain(self, storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup):
         chians = []
-        for chain_storage_delivery in self.service_transfer.chains_storage_delivery_from_storage_to_storage(storage_guid, storage_pickup_guid):
+        for chain_storage_delivery in self.chains_storage_delivery_from_storage_to_storage(storage_guid, storage_pickup_guid):
             items_delivery = []
             for i in range(1,len(chain_storage_delivery)):
                 storage_guid_depart = chain_storage_delivery[0]

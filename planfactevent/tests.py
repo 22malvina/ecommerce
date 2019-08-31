@@ -265,8 +265,77 @@ class TestEStorage(TestCase):
         storage_donor_guid_1 = 1
         storage_guid_2 = 2
         storage_pickup_guid_3 = 3
+        transport_auto_guid_1 = 1
+        transport_car_guid_2 = 2
         datetime_create_order = datetime.datetime(2019, 7, 1, 12, 15, 46, tzinfo=pytz.UTC)
         datetime_pickup = datetime.datetime(2019, 7, 7, 9, 13, 00, tzinfo=pytz.UTC)
 
-        service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
-
+        self.assertEqual([storage_donor_guid_1, storage_guid_2, storage_pickup_guid_3], service_transfer.all_storage_guids())
+        self.assertEqual(
+            [[storage_donor_guid_1, storage_guid_2, storage_pickup_guid_3]],
+            service_transfer.chains_storage_delivery_from_storage_to_storage(storage_donor_guid_1, storage_pickup_guid_3)
+        )
+        self.assertEqual(
+            [datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC)],
+            service_transfer.datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(
+                transport_auto_guid_1, storage_donor_guid_1, storage_guid_2, datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC)
+            )
+        )
+        #self.assertEqual(
+        #    [datetime.datetime(2019, 7, 2, 11, 00, 00, tzinfo=pytz.UTC)],
+        #    service_transfer.datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(
+        #        transport_car_guid_2, storage_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 2, 10, 00, 00, tzinfo=pytz.UTC)
+        #    )
+        #)
+        self.assertEqual(
+            [datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC)],
+            service_transfer.datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(transport_auto_guid_1, storage_donor_guid_1, storage_guid_2, datetime_create_order, datetime_pickup)
+        )
+        self.assertEqual(
+            [
+                (
+                    1,
+                    datetime.datetime(2019, 7, 1, 16, 0, tzinfo=pytz.UTC),
+                    1,
+                    2,
+                    datetime.datetime(2019, 7, 1, 19, 0, tzinfo=pytz.UTC)
+                ),
+            ],
+            service_transfer.edge_transport_delivery_from_storage_to_storage_in_datetime_range(transport_auto_guid_1, storage_donor_guid_1, storage_guid_2, datetime_create_order, datetime_pickup)
+        )
+        self.assertEqual(
+            [
+                (
+                    1,
+                    datetime.datetime(2019, 7, 1, 16, 0, tzinfo=pytz.UTC),
+                    1,
+                    2,
+                    datetime.datetime(2019, 7, 1, 19, 0, tzinfo=pytz.UTC)
+                ),
+            ],
+            service_transfer.edge_delivery(storage_donor_guid_1, storage_guid_2, datetime_create_order, datetime_pickup)
+        )
+        transport_guids_allow_for_stock = [1]
+        self.assertEqual(
+            [
+                (
+                    1,
+                    datetime.datetime(2019, 7, 1, 16, 0, tzinfo=pytz.UTC),
+                    1,
+                    2,
+                    datetime.datetime(2019, 7, 1, 19, 0, tzinfo=pytz.UTC),
+                ),
+                (
+                    2,
+                    datetime.datetime(2019, 7, 2, 10, 0, tzinfo=pytz.UTC),
+                    2,
+                    3,
+                    datetime.datetime(2019, 7, 2, 11, 0, tzinfo=pytz.UTC),
+                ),
+            ],
+            service_transfer.fast_chain(storage_donor_guid_1, storage_guid_2, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
+        )
+        self.assertEqual(
+            None,
+            service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
+        )
