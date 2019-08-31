@@ -401,10 +401,18 @@ class ServiceTransferProductFromTo(object):
         return [[1,2,3]]
 
     def datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_depart):
-        return [datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC)]
+        #return [datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC)]
+        if storage_guid_depart == 1:
+            return [datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC)]
+        elif storage_guid_depart == 2:
+            return [datetime.datetime(2019, 7, 2, 11, 00, 00, tzinfo=pytz.UTC)]
 
     def datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
-        return [datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC)]
+        #return [datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC)]
+        if storage_guid_depart == 1:
+            return [datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC)]
+        elif storage_guid_depart == 2:
+            return [datetime.datetime(2019, 7, 2, 10, 00, 00, tzinfo=pytz.UTC)]
 
     def edge_transport_delivery_from_storage_to_storage_in_datetime_range(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
         items_edge_delivery = []
@@ -422,7 +430,11 @@ class ServiceTransferProductFromTo(object):
         return items_edge_delivery
 
     def edge_transport_guids_delivery_from_storage_to_storage(self, storage_guid_depart, storage_guid_arrival):
-        return [1]
+        #return [1]
+        if storage_guid_depart == 1:
+            return [1]
+        elif storage_guid_depart == 2:
+            return [2]
 
     def edge_delivery(self, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
         # Формируем набор перемещений который проходи из с1 в с2 и укладывающийся в нужный времнной диапазон 
@@ -444,8 +456,8 @@ class ServiceTransferProductFromTo(object):
         for chain_storage_delivery in self.chains_storage_delivery_from_storage_to_storage(storage_guid, storage_pickup_guid):
             items_delivery = []
             for i in range(1,len(chain_storage_delivery)):
-                storage_guid_depart = chain_storage_delivery[0]
-                storage_guid_arrival = chain_storage_delivery[1]
+                storage_guid_depart = chain_storage_delivery[i-1]
+                storage_guid_arrival = chain_storage_delivery[i]
                 items_edge_delivery = self.edge_delivery(storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup)
                 items_delivery.append(items_edge_delivery)
 
