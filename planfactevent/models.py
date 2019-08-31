@@ -290,6 +290,13 @@ class PlanFactEvent(models.Model):
                     assert False
         return list(stocks_with_serial_number)
 
+    @classmethod
+    def storage_guids(cls):
+        storage_guids = set()
+        if plan_fact_event in PlanFactEvent.objects.all():
+            storage_guids.add(plan_fact_event.storage_guid)
+        return list(storage_guids)
+
     #@classmethod
     #def transfer_plan(cls, product_guid, quantity, currency, price, storage_guid_depart, datetime_depart, storage_guid_arrival, datetime_arrival):
     #    cls.pull_stocks(datetime_depart, storage_guid_depart, product_guid, quantity, currency, price)
@@ -360,6 +367,22 @@ class FactoryStockFromParams(object):
             return False
         return True
 
+class FacrtoryProductGuidWithQuantity(object):
+    """
+    Сколько каких товаров нужно
+    """
+    @classmethod
+    def create(cls, basket):
+        elements = []
+        for item in basket():
+            elements.append(
+                (
+                    product_guid,
+                    quantity,
+                )
+            )
+        return elements
+
 class ServiceTransferProductFromTo(object):
     """
     Будет ли обект данного класа следить о целостности всех инвариантов?
@@ -367,6 +390,66 @@ class ServiceTransferProductFromTo(object):
         Отслеживать можно что товар нелдьзя списато до того как зачислить,
             При таком подходе отирцательные остатки не возможны.
     """
+
+    def all_storage_guids(self):
+        return PlanFactEvent.storage_guids()
+
+
+    def __edge_delivery(self, storage_guid_depart, storage_guid_arrival, transport_guids_allow_for_stock):
+        # Формируем набор перемещений который проходи из с1 в с2 и укладывающийся в нужный времнной диапазон 
+        items_chain_delivery = []
+        transport_guids = self.__service_transfer.transport_guids_delivery_from_storage_to_storage(storage_guid_depart, storage_guid_arrival)
+        for transport_guid in transport_guids:
+            if transport_guid not in transport_guids_allow_for_stock:
+                continue
+            datetimes_depart = self.__service_transfer.datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(\
+                transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup)
+            for datetime_depart in datetimes_depart:
+                datetimes_arrival = self.__service_transfer.datetimes_arrival_for_delivery_by_transport_from_storage_to_storage(\
+                    transport_guid, storage_guid_depart, storage_guid_arrival, datetime_depart)
+                for datetime_arrival in datetimes_arrival:
+                    items_chain_delivery.append(
+                        (
+                            storage_guid_depart, datetime_depart, transport_guids, storage_guid_arrival, datetime_arrival,
+                        )
+                    )
+        # Если не смогли проехать в по даному участку цепи
+        if not items_chain_delivery:
+            assert False
+        if len(items_chain_delivery) == 0:
+            assert False
+        return items_chain_delivery
+
+    def fast_chain(self, storage_guid, storage_pickup_guid, transport_guids_allow_for_stock):
+        chians = []
+        for chain_storage_delivery in self.__service_transfer.chain_storage_delivery_from_storage_to_storage(storage_guid, storage_pickup_guid):
+            items_delivery = []
+            for i in range(1,len(chain_storage_delivery)):
+                storage_guid_depart = chain_storage_delivery[0]
+                storage_guid_arrival = chain_storage_delivery[1]
+                items_chain_delivery = self.__edge_delivery(storage_guid_depart, storage_guid_arrival, transport_guids_allow_for_stock)
+                items_delivery.append(items_chain_delivery)
+
+            # Находим кратчайший маршрут из набора возможных перемещенеий между ребрарами
+            fast_chain = []
+            currnet_datetime = None
+            for item in items_delivery:
+                if currnet_datetime:
+                    filter(lambda i: i[4] > currnet_datetime, item)
+                if not item:
+                    raise False
+                sorted(item, key=lambda i: i[4])
+                currnet_datetime = item[0][4]
+                fast_chain.append(item[0])
+
+            chians.append(fast_chain)
+
+        # разные цепочки сортиуем по дате доставки
+        sorted(chians, key=lambda i: i[-1][4])
+        very_fast_chain = chians[0]
+
+        return very_fast_chain
+
     def move(self, product_guid, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival):
         #Получить столько информаци по имеющимся сейчас релальным товарам на складе чтобы потом их же списать, транспортировать и принять уже на другом.
         # транзакция с локом на чтение конкртеных записей, нужна для того чтобы при вытаскиваннии из событий того что приняли и хотим сейчас перевести. 
@@ -489,17 +572,82 @@ class ServiceOrder(object):
         но время когда плановое децствие отменяется перестает "существовать" оно или удаляется, но тогда предыдущие данные изменятся или нужно чтобы окончилось и сразу появился  в замен новый план. Или не появился.
         Как учесть что заланировано и не сделано от того что запланировано но поменялось?
     """
+
+    def __list_stocks_for_basket(self, basket):
+        stocks = []
+        # Получили остатки нужных товаров от всех складов
+        for item in basket:
+            product_guid = item.get_product_guid()
+            for storage_guid in self.__service_transfer.all_storage_guids():
+                for stock in self.__service_transfer.stocks_ready_for_move(storage_guid, product_guid):
+                    stocks.append(stock)
+        return stocks
+
+    def __generate_plan_event_for_delivery_product_guids_with_quantity_to_client(product_guids_with_quantity, basket, storage_pickup_guid, datetime_start, datetime_pickup):
+        #stocks = self.__list_stocks_for_basket(basket)
+
+        groups_events_posible_for_product = {}
+
+        for item in basket:
+            product_guid = item.get_product_guid()
+            groups_events_posible = []
+            for storage_guid in self.__service_transfer.all_storage_guids():
+                for stock in self.__service_transfer.stocks_ready_for_move(storage_guid, product_guid):
+
+                    transport_guids_allow_for_stock = self.__service_transfer.transport_guids_allow_for_stock(stock)
+
+                    chain = self.__service_transfer.fast_chain(self, storage_guid, storage_pickup_guid, transport_guids_allow_for_stock)
+
+                    #product_guid = stock[0]
+                    #quantity_for_transfer = stock[2]
+                    #storage_depart_guid = storage_guid
+                    #storage_arrival_guid = storage_pickup_guid
+                    #for transport_guid in self.__service_transfer.transport_guids_delivery_form_to(storage_guid, storage_pickup_guid)
+                    #self.__service_transfer.move(product_guid, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_pickup_guid, datetime_arrival):
+        return stocks
+
+
+
+        plan_events = []
+        return plan_events
+
+    def __has_basket_on_stocks(self, basket):
+        #stocks = []
+        ## Получили остатки нужных товаров от всех складов
+        #for item in basket:
+        #    product_guid = item.get_product_guid()
+        #    for storage_guid in self.__service_transfer.all_storage_guids():
+        #        for stock in self.__service_transfer.stocks_ready_for_move(storage_guid, product_guid):
+        #            stocks.append(stock)
+        stocks = self.__list_stocks_for_basket(basket)
+
+        # Протверили что все что указано в корзине есть на каких то складах в данный момент времни.
+        #  Разбираем случай когда stock - это один серийный товар
+        for item in basket:
+            product_guid = item.get_product_guid()
+            for i in range(0, item.get_quantity()):
+                temp_stock = None
+                for stock in stocks:
+                    if stock[0] == product_guid:
+                        temp_stock = stock
+                        break
+                else:
+                    # Не нашли на остатках товар из корзины
+                    return False
+                stocks.remove(temp_stock)
+        return True
+
     def __init__(self, service_transfer):
         self.__service_transfer = service_transfer
 
+    def __is_delivery(self, basket):
+        return True
+
     def create_order_sale_pickup(self, basket, storage_pickup_guid, datetime_pickup):
-        #if self.__service_transfer.has_basket_on_stocks(basket):
-        #    for item in basket:
-        #        for storage_guid in self.__service_transfer.all_storage_guids():
-        #            if self.__service_transfer.stocks_ready_for_move(storage_guid, product_guid):
-        #                pass
-        #    if self.__service_transfer.is_delivery(basket):
-        #        pass
-        pass
+        if self.__has_basket_on_stocks(basket) and self.__is_delivery(basket):
+
+            product_guids_with_quantity = FacrtoryProductGuidWithQuantityFromBasket().create(basket)
+            plan_events = self.__generate_plan_event_for_delivery_product_guids_with_quantity_to_client(product_guids_with_quantity, basket, storage_pickup_guid, datetime_pickup)
+            pass
 
 
