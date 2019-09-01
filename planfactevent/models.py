@@ -7,6 +7,46 @@ import datetime
 import pytz
 #import copy
 
+class Invoice(models.Model):
+    """
+    """
+    info = models.CharField(u"Описание накладной", max_length=200, null=True, blank=True)
+
+class Order(models.Model):
+    """
+    """
+    datetime_create = models.DateTimeField(u'дата и время создание', auto_now_add=True)
+
+    is_sale = models.BooleanField(verbose_name=u'Реализация', default=False)
+    is_purchase = models.BooleanField(verbose_name=u'Закупка', default=False)
+
+    #invoice_guid = models.CharField(u'GUID накладной', max_length=200, null=True, blank=True)
+    datetime_process = models.DateTimeField(u'дата и время проведения опрерации', null=True, blank=True)
+    client_guid = models.IntegerField(u"guid клиента", null=True, blank=True)
+
+#class ItemProduct(models.Model)
+#    #product = models.ForeignKey(Product, on_delete=models.CASCADE) # Следует использовать Guid Product.
+#    product_guid = models.IntegerField(u"guid продукта сейчас соответствует id этого product у нас в системе, так себе решение")
+#    quantity = models.IntegerField(u"Количество")
+#
+#    # возможно тут лучше иметь сылку на блок выхода этого товара из систиемы в PlanFactEvent
+#    currency = models.CharField(u"Валюта реализации", max_length=200, null=True, blank=True)
+#    price = models.DecimalField(u"Стоимость реализцаии", decimal_places=2, max_digits=7, null=True, blank=True)
+
+class ItemOrder(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    #item_product = models.ForeignKey(ItemProduct, on_delete=models.CASCADE)
+
+    # возможно тут лучше иметь ссылки на блок выхода(палнового и реального) этого товара из систиемы в PlanFactEvent
+    ##product = models.ForeignKey(Product, on_delete=models.CASCADE) # Следует использовать Guid Product.
+    #product_guid = models.IntegerField(u"guid продукта сейчас соответствует id этого product у нас в системе, так себе решение")
+    #quantity = models.IntegerField(u"Количество")
+    #currency = models.CharField(u"Валюта закупки / реализации", max_length=200, null=True, blank=True)
+    #price = models.DecimalField(u"Стоимость закупки / реализцаии", decimal_places=2, max_digits=7, null=True, blank=True)
+
+    plan_event_guid = models.IntegerField(u"guid записи из PlanFactEvent говрящий о запланированном перемещении товара")
+    fact_event_guid = models.IntegerField(u"guid записи из PlanFactEvent говрящий о осуществленном оперемещении товара")
+
 class PlanFactEvent(models.Model):
     """
     Движение оборотных средств. Product, Money, ...

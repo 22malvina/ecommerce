@@ -502,7 +502,7 @@ class TestEStorage(TestCase):
             service_transfer.fast_schedule(storage_guid_4, storage_pickup_guid_5, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
         )
         self.assertEqual(
-            None,
+            [],
             service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_5, datetime_create_order, datetime_pickup)
         )
 
@@ -648,7 +648,7 @@ class TestEStorage(TestCase):
             service_transfer.fast_schedule(storage_guid_4, storage_pickup_guid_5, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
         )
         self.assertEqual(
-            None,
+            [],
             service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_5, datetime_create_order, datetime_pickup)
         )
 
@@ -905,7 +905,7 @@ class TestEStorage(TestCase):
             service_transfer.fast_schedule(storage_donor_guid_1, storage_pickup_guid_3, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
         )
         self.assertEqual(
-            None,
+            [],
             service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
         )
 
@@ -919,7 +919,7 @@ class TestEStorage(TestCase):
             service_transfer.fast_schedule(storage_donor_guid_1, storage_pickup_guid_3, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
         )
         self.assertEqual(
-            None,
+            [],
             service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
         )
 
