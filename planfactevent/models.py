@@ -386,7 +386,6 @@ class FacrtoryProductGuidWithQuantity(object):
             )
         return elements
 
-
 class RepositorySchedule(object):
     def add_schedule(self, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival):
         self.__schedules.append((storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival))
@@ -436,7 +435,6 @@ class RepositorySchedule(object):
     def __init__(self):
         self.__schedules = []
 
-
 class ServiceTransferProductFromTo(object):
     """
     Будет ли обект данного класа следить о целостности всех инвариантов?
@@ -444,10 +442,6 @@ class ServiceTransferProductFromTo(object):
         Отслеживать можно что товар нелдьзя списато до того как зачислить,
             При таком подходе отирцательные остатки не возможны.
     """
-
-    #def add_schedule(self, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival):
-    #    #self.__schedules.append((storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival))
-    #    self.__repository_schedule.add_schedule(storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival)
 
     def add_storage_guid(self, storage_guid):
         self.__storage_guids.append(storage_guid)
@@ -464,23 +458,6 @@ class ServiceTransferProductFromTo(object):
         self.__repository_schedule.chain_master_v2(chains, storage_guid, storage_pickup_guid, [])
         return sorted(sorted(list(set(map(lambda x :tuple(x), chains))), key=lambda x: [1]), key=lambda x: len(x))
 
-    #def datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_depart):
-    #    #datetimes_arrival = set()
-    #    #for schedule in self.__schedules:
-    #    #    if schedule[0] == storage_guid_depart and schedule[1] == datetime_depart and schedule[2] == transport_guid and schedule[3] == storage_guid_arrival:
-    #    #        datetimes_arrival.add(schedule[4])
-    #    #return sorted(list(datetimes_arrival))
-    #    return sorted(self.__repository_schedule.datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(transport_guid, storage_guid_depart, storage_guid_arrival, datetime_depart))
-
-    #def datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
-    #    #datetimes_depart = set()
-    #    #for schedule in self.__schedules:
-    #    #    if schedule[0] == storage_guid_depart and schedule[2] == transport_guid and schedule[3] == storage_guid_arrival \
-    #    #        and datetime_start <= schedule[1] <= datetime_pickup:
-    #    #        datetimes_depart.add(schedule[1])
-    #    #return sorted(list(datetimes_depart))
-    #    return sorted(self.__repository_schedule.datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup))
-
     def edge_transport_delivery_from_storage_to_storage_in_datetime_range(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
         items_edge_delivery = []
         datetimes_depart = self.__repository_schedule.datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(\
@@ -495,14 +472,6 @@ class ServiceTransferProductFromTo(object):
                     )
                 )
         return items_edge_delivery
-
-    #def transport_guids_delivery_from_storage_to_storage(self, storage_guid_depart, storage_guid_arrival):
-    #    #transport_guids = set()
-    #    #for schedule in self.__schedules:
-    #    #    if schedule[0] == storage_guid_depart and schedule[3] == storage_guid_arrival:
-    #    #        transport_guids.add(schedule[2])
-    #    #return sorted(list(transport_guids))
-    #    return sorted(self.__repository_schedule.transport_guids_delivery_from_storage_to_storage(storage_guid_depart, storage_guid_arrival))
 
     def edge_delivery(self, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
         # Формируем набор перемещений который проходи из с1 в с2 и укладывающийся в нужный времнной диапазон 
@@ -559,7 +528,6 @@ class ServiceTransferProductFromTo(object):
     def __init__(self, repository_schedule):
         self.__storage_guids = []
         self.__transport_guids = []
-        #self.__schedules = []
         self.__repository_schedule = repository_schedule
 
     def move(self, product_guid, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival):
@@ -664,7 +632,6 @@ class ServiceTransferProductFromTo(object):
                 else:
                     assert False
         return list(stocks)
-
 
 class ServiceOrder(object):
     """
