@@ -405,7 +405,6 @@ class ServiceTransferProductFromTo(object):
 
     def all_storage_guids(self):
         #return PlanFactEvent.storage_guids()
-        #return [1,2,3]
         return self.__storage_guids
 
     def __chain_master(self, chain, storage_depart_guid, storage_arrival_guid):
@@ -413,39 +412,24 @@ class ServiceTransferProductFromTo(object):
             chain_temp = chain[:]
             if schedule[0] == storage_depart_guid:
                 if schedule[3] == storage_arrival_guid:
-                    print schedule[0], '+', schedule[3]
                     return chain_temp + [schedule[0], storage_arrival_guid]
                 else:
-                    print schedule[0], '->'
                     chain_temp.append(schedule[0])
                     return self.__chain_master(chain_temp, schedule[3], storage_arrival_guid)
-        print '-'
 
     def __chain_master_v2(self, chains, storage_depart_guid, storage_arrival_guid, item):
         for schedule in self.__schedules:
             item_temp = item[:]
             if schedule[0] == storage_depart_guid:
                 if schedule[3] == storage_arrival_guid:
-                    #print schedule[0], '+', schedule[3]
                     chains.append(item_temp + [schedule[0], storage_arrival_guid])
                 else:
-                    #print schedule[0], '->'
                     item_temp.append(schedule[0])
                     self.__chain_master_v2(chains, schedule[3], storage_arrival_guid, item_temp)
-        #print '-'
 
     def chains_storage_delivery_from_storage_to_storage(self, storage_guid, storage_pickup_guid):
-        #if storage_guid == 1:
-        #    return [[1,2,3]]
-        #elif storage_guid == 4:
-        #    return [[4,5]]
-        #assert False
-
-        #chains = [self.__chain_master([], storage_guid, storage_pickup_guid)]
         chains = []
         self.__chain_master_v2(chains, storage_guid, storage_pickup_guid, [])
-        #for chain in chains:
-        #    print chain
         return sorted(sorted(list(set(map(lambda x :tuple(x), chains))), key=lambda x: [1]), key=lambda x: len(x))
 
     def datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_depart):
