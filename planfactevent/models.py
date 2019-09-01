@@ -478,10 +478,6 @@ class ServiceTransferProductFromTo(object):
         #return PlanFactEvent.storage_guids()
         return self.__storage_guids
 
-    #def chains_storage_delivery_from_storage_to_storage(self, storage_guid, storage_pickup_guid):
-    #    return self.__graph.chain_master(storage_guid, storage_pickup_guid)
-    #    #return sorted(sorted(list(set(map(lambda x :tuple(x), chains))), key=lambda x: [1]), key=lambda x: len(x))
-
     def edge_transport_delivery_from_storage_to_storage_in_datetime_range(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
         items_edge_delivery = []
         datetimes_depart = self.__repository_schedule.datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(\
