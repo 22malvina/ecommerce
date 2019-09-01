@@ -283,7 +283,7 @@ class TestEStorage(TestCase):
 
         self.assertEqual([storage_donor_guid_1, storage_guid_2, storage_pickup_guid_3], service_transfer.all_storage_guids())
         self.assertEqual(
-            [[storage_donor_guid_1, storage_guid_2, storage_pickup_guid_3]],
+            [(storage_donor_guid_1, storage_guid_2, storage_pickup_guid_3)],
             service_transfer.chains_storage_delivery_from_storage_to_storage(storage_donor_guid_1, storage_pickup_guid_3)
         )
         self.assertEqual(
@@ -422,7 +422,7 @@ class TestEStorage(TestCase):
 
         self.assertEqual([storage_guid_4, storage_pickup_guid_5], service_transfer.all_storage_guids())
         self.assertEqual(
-            [[storage_guid_4, storage_pickup_guid_5]],
+            [(storage_guid_4, storage_pickup_guid_5)],
             service_transfer.chains_storage_delivery_from_storage_to_storage(storage_guid_4, storage_pickup_guid_5)
         )
         self.assertEqual(
@@ -535,7 +535,7 @@ class TestEStorage(TestCase):
 
         self.assertEqual([storage_guid_4, storage_pickup_guid_5], service_transfer.all_storage_guids())
         self.assertEqual(
-            [[storage_guid_4, storage_pickup_guid_5]],
+            [(storage_guid_4, storage_pickup_guid_5)],
             service_transfer.chains_storage_delivery_from_storage_to_storage(storage_guid_4, storage_pickup_guid_5)
         )
         self.assertEqual(
@@ -604,3 +604,273 @@ class TestEStorage(TestCase):
             None,
             service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_5, datetime_create_order, datetime_pickup)
         )
+
+    def test_create_order_sale_pickup_4(self):
+        """
+        Расширим пример test_create_order_sale_pickup_1 несуколькими вариантами доставки груза.
+
+        Доставка на продукт 1 (телефон Mi8) клиенту 1 на точку получения 3 с склада 1(один из наших поставщиков) через наш промежуточный склад 2.
+        У компании есть транспортное средство 1 (грузовик) ездит 1 раз в день междк складами 1 и 2.
+        А также 2 (автомобиль) которые ездит с 2 на 3.
+        Оба перевозят грузы любых размеров.
+        Пользователь оформил заказ на сайте 2019, 7, 1, 12, 15, 46.
+        А из передложенных дат получения выбрал 2019, 7, 7, 9, 13, 00.
+
+        Задача сразу после создания заказа, у нас в системе, содать план действий по его реализации.
+        Пример плана по движению товара:
+            2019, 7, 1, 16, 00, 00 отгрузка у поставщика с склада 1
+            2019, 7, 1, 16, 00, 00 грузковик 1 принял к перемещению заказ
+            2019, 7, 1, 19, 00, 00 грузковик 1 отгрузил закза
+            2019, 7, 1, 19, 00, 00 склад 2 принял на зхарание заказ
+            2019, 7, 2, 10, 00, 00 склад 2 отгрузил заказ
+            2019, 7, 2, 10, 00, 00 автомобиль 2 приянл заказ к перемещению
+            2019, 7, 2, 11, 00, 00 автомобиль 2 отгрузил закза
+            2019, 7, 2, 11, 00, 00 склад 3 принял на харание заказ
+            2019, 7, 7,  9, 13, 00 склад 3 отгрузил заказ клиенту 1
+            2019, 7, 7,  9, 13, 00 клиенту 1 принял заказ
+        План надо расширить движением денежных средств.
+            ...
+
+        Добаили в расписанеи скоростной поезд.
+
+        Задача сразу после создания заказа, у нас в системе, содать план действий по его реализации.
+        Пример плана по движению товара:
+            2019, 7, 1, 19, 00, 00 отгрузка у поставщика с склада 1
+            2019, 7, 1, 19, 00, 00 поезд скоростной 4 принял к перемещению заказ
+            2019, 7, 2, 10, 23, 00 поезд 4 отгрузил закза
+            2019, 7, 2, 10, 23, 00 склад 3 принял на зхарание заказ
+            2019, 7, 7,  9, 13, 00 склад 3 отгрузил заказ клиенту 1
+            2019, 7, 7,  9, 13, 00 клиенту 1 принял заказ
+        План надо расширить движением денежных средств.
+            ...
+
+
+        """
+        service_transfer = ServiceTransferProductFromTo()
+        service_order = ServiceOrder(service_transfer)
+        #service_order.create_order_sale_pickup(cargo, )
+        basket_1 = []
+        storage_donor_guid_1 = 1
+        storage_guid_2 = 2
+        storage_pickup_guid_3 = 3
+
+        service_transfer.add_storage_guid(storage_donor_guid_1)
+        service_transfer.add_storage_guid(storage_guid_2)
+        service_transfer.add_storage_guid(storage_pickup_guid_3)
+
+        transport_auto_guid_1 = 1
+        transport_car_guid_2 = 2
+        transport_auto_guid_3 = 3
+        transport_train_guid_4 = 4
+
+        service_transfer.add_transport_guid(transport_auto_guid_1)
+        service_transfer.add_transport_guid(transport_car_guid_2)
+
+        service_transfer.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 2, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 2, 19, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 3, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 3, 19, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 4, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 4, 19, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 5, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 5, 19, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 6, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 6, 19, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 7, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 7, 19, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 8, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 8, 19, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 9, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 9, 19, 00, 00, tzinfo=pytz.UTC))
+
+        service_transfer.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 2, 15, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_3, storage_guid_2, datetime.datetime(2019, 7, 2, 19, 10, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 4, 15, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_3, storage_guid_2, datetime.datetime(2019, 7, 4, 19, 10, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 6, 15, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_3, storage_guid_2, datetime.datetime(2019, 7, 6, 19, 10, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 8, 15, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_3, storage_guid_2, datetime.datetime(2019, 7, 8, 19, 10, 00, tzinfo=pytz.UTC))
+
+        service_transfer.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 1, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 1, 11, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 2, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 2, 11, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 3, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 3, 11, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 4, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 4, 11, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 5, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 5, 11, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 6, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 6, 11, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 7, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 7, 11, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 8, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 8, 11, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 9, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 9, 11, 00, 00, tzinfo=pytz.UTC))
+
+        service_transfer.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 1, 17, 00, 00, tzinfo=pytz.UTC), transport_train_guid_4, storage_pickup_guid_3, datetime.datetime(2019, 7, 3, 10, 45, 00, tzinfo=pytz.UTC))
+
+        datetime_create_order = datetime.datetime(2019, 7, 1, 12, 15, 46, tzinfo=pytz.UTC)
+        datetime_pickup = datetime.datetime(2019, 7, 7, 9, 13, 00, tzinfo=pytz.UTC)
+
+        # start
+
+        self.assertEqual([storage_donor_guid_1, storage_guid_2, storage_pickup_guid_3], service_transfer.all_storage_guids())
+        self.assertEqual(
+            [
+                (storage_donor_guid_1, storage_pickup_guid_3),
+                (storage_donor_guid_1, storage_guid_2, storage_pickup_guid_3),
+            ],
+            service_transfer.chains_storage_delivery_from_storage_to_storage(storage_donor_guid_1, storage_pickup_guid_3)
+        )
+        self.assertEqual(
+            [datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC)],
+            service_transfer.datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(
+                transport_auto_guid_1, storage_donor_guid_1, storage_guid_2, datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC)
+            )
+        )
+        self.assertEqual(
+            [],
+            service_transfer.datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(
+                transport_auto_guid_1, storage_donor_guid_1, storage_pickup_guid_3, datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC)
+            )
+        )
+        self.assertEqual(
+            [datetime.datetime(2019, 7, 2, 11, 00, 00, tzinfo=pytz.UTC)],
+            service_transfer.datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(
+                transport_car_guid_2, storage_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 2, 10, 00, 00, tzinfo=pytz.UTC)
+            )
+        )
+        self.assertEqual(
+            [],
+            service_transfer.datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(
+                transport_car_guid_2, transport_auto_guid_1, storage_pickup_guid_3, datetime.datetime(2019, 7, 3, 10, 00, 00, tzinfo=pytz.UTC)
+            )
+        )
+        self.assertEqual(
+            [datetime.datetime(2019, 7, 3, 10, 45, 00, tzinfo=pytz.UTC)],
+            service_transfer.datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(
+                transport_train_guid_4, storage_donor_guid_1, storage_pickup_guid_3, datetime.datetime(2019, 7, 1, 17, 00, 00, tzinfo=pytz.UTC)
+            )
+        )
+        self.assertEqual(
+            [
+                datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC),
+                datetime.datetime(2019, 7, 2, 16, 00, 00, tzinfo=pytz.UTC),
+                datetime.datetime(2019, 7, 3, 16, 00, 00, tzinfo=pytz.UTC),
+                datetime.datetime(2019, 7, 4, 16, 00, 00, tzinfo=pytz.UTC),
+                datetime.datetime(2019, 7, 5, 16, 00, 00, tzinfo=pytz.UTC),
+                datetime.datetime(2019, 7, 6, 16, 00, 00, tzinfo=pytz.UTC),
+            ],
+            service_transfer.datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(transport_auto_guid_1, storage_donor_guid_1, storage_guid_2, datetime_create_order, datetime_pickup)
+        )
+        self.assertEqual(
+            [
+                datetime.datetime(2019, 7, 2, 10, 00, 00, tzinfo=pytz.UTC),
+                datetime.datetime(2019, 7, 3, 10, 00, 00, tzinfo=pytz.UTC),
+                datetime.datetime(2019, 7, 4, 10, 00, 00, tzinfo=pytz.UTC),
+                datetime.datetime(2019, 7, 5, 10, 00, 00, tzinfo=pytz.UTC),
+                datetime.datetime(2019, 7, 6, 10, 00, 00, tzinfo=pytz.UTC),
+            ],
+            service_transfer.datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(transport_car_guid_2, storage_guid_2, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
+        )
+        self.assertEqual(
+            [
+                datetime.datetime(2019, 7, 1, 17, 00, 00, tzinfo=pytz.UTC),
+            ],
+            service_transfer.datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(transport_train_guid_4, storage_donor_guid_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
+        )
+        self.assertEqual(
+            [
+                (1, datetime.datetime(2019, 7, 1, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 1, 19, 0, tzinfo=pytz.UTC),),
+                (1, datetime.datetime(2019, 7, 2, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 2, 19, 0, tzinfo=pytz.UTC),),
+                (1, datetime.datetime(2019, 7, 3, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 3, 19, 0, tzinfo=pytz.UTC),),
+                (1, datetime.datetime(2019, 7, 4, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 4, 19, 0, tzinfo=pytz.UTC),),
+                (1, datetime.datetime(2019, 7, 5, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 5, 19, 0, tzinfo=pytz.UTC),),
+                (1, datetime.datetime(2019, 7, 6, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 6, 19, 0, tzinfo=pytz.UTC),),
+            ],
+            service_transfer.edge_transport_delivery_from_storage_to_storage_in_datetime_range(transport_auto_guid_1, storage_donor_guid_1, storage_guid_2, datetime_create_order, datetime_pickup)
+        )
+        self.assertEqual(
+            [
+                (1, datetime.datetime(2019, 7, 2, 15, 0, tzinfo=pytz.UTC), 3, 2, datetime.datetime(2019, 7, 2, 19, 10, tzinfo=pytz.UTC),),
+                (1, datetime.datetime(2019, 7, 4, 15, 0, tzinfo=pytz.UTC), 3, 2, datetime.datetime(2019, 7, 4, 19, 10, tzinfo=pytz.UTC),),
+                (1, datetime.datetime(2019, 7, 6, 15, 0, tzinfo=pytz.UTC), 3, 2, datetime.datetime(2019, 7, 6, 19, 10, tzinfo=pytz.UTC),),
+            ],
+            service_transfer.edge_transport_delivery_from_storage_to_storage_in_datetime_range(transport_auto_guid_3, storage_donor_guid_1, storage_guid_2, datetime_create_order, datetime_pickup)
+        )
+        self.assertEqual(
+            [
+                (2, datetime.datetime(2019, 7, 2, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 2, 11, 0, tzinfo=pytz.UTC),),
+                (2, datetime.datetime(2019, 7, 3, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 3, 11, 0, tzinfo=pytz.UTC),),
+                (2, datetime.datetime(2019, 7, 4, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 4, 11, 0, tzinfo=pytz.UTC),),
+                (2, datetime.datetime(2019, 7, 5, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 5, 11, 0, tzinfo=pytz.UTC),),
+                (2, datetime.datetime(2019, 7, 6, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 6, 11, 0, tzinfo=pytz.UTC),),
+            ],
+            service_transfer.edge_transport_delivery_from_storage_to_storage_in_datetime_range(transport_car_guid_2, storage_guid_2, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
+        )
+        self.assertEqual(
+            [
+                (1, datetime.datetime(2019, 7, 1, 17, 00, tzinfo=pytz.UTC), 4, 3, datetime.datetime(2019, 7, 3, 10, 45, tzinfo=pytz.UTC),),
+            ],
+            service_transfer.edge_transport_delivery_from_storage_to_storage_in_datetime_range(transport_train_guid_4, storage_donor_guid_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
+        )
+
+        self.assertEqual([1,3], service_transfer.edge_transport_guids_delivery_from_storage_to_storage(storage_donor_guid_1, storage_guid_2))
+        self.assertEqual(
+            [
+                (1, datetime.datetime(2019, 7, 1, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 1, 19, 0, tzinfo=pytz.UTC),),
+                (1, datetime.datetime(2019, 7, 2, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 2, 19, 0, tzinfo=pytz.UTC),),
+                (1, datetime.datetime(2019, 7, 2, 15, 0, tzinfo=pytz.UTC), 3, 2, datetime.datetime(2019, 7, 2, 19, 10, tzinfo=pytz.UTC),),
+                (1, datetime.datetime(2019, 7, 3, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 3, 19, 0, tzinfo=pytz.UTC),),
+                (1, datetime.datetime(2019, 7, 4, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 4, 19, 0, tzinfo=pytz.UTC),),
+                (1, datetime.datetime(2019, 7, 4, 15, 0, tzinfo=pytz.UTC), 3, 2, datetime.datetime(2019, 7, 4, 19, 10, tzinfo=pytz.UTC),),
+                (1, datetime.datetime(2019, 7, 5, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 5, 19, 0, tzinfo=pytz.UTC),),
+                (1, datetime.datetime(2019, 7, 6, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 6, 19, 0, tzinfo=pytz.UTC),),
+                (1, datetime.datetime(2019, 7, 6, 15, 0, tzinfo=pytz.UTC), 3, 2, datetime.datetime(2019, 7, 6, 19, 10, tzinfo=pytz.UTC),),
+            ],
+            service_transfer.edge_delivery(storage_donor_guid_1, storage_guid_2, datetime_create_order, datetime_pickup)
+        )
+        self.assertEqual([2,], service_transfer.edge_transport_guids_delivery_from_storage_to_storage(storage_guid_2, storage_pickup_guid_3))
+        self.assertEqual(
+            [
+                (2, datetime.datetime(2019, 7, 2, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 2, 11, 0, tzinfo=pytz.UTC),),
+                (2, datetime.datetime(2019, 7, 3, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 3, 11, 0, tzinfo=pytz.UTC),),
+                (2, datetime.datetime(2019, 7, 4, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 4, 11, 0, tzinfo=pytz.UTC),),
+                (2, datetime.datetime(2019, 7, 5, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 5, 11, 0, tzinfo=pytz.UTC),),
+                (2, datetime.datetime(2019, 7, 6, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 6, 11, 0, tzinfo=pytz.UTC),),
+            ],
+            service_transfer.edge_delivery(storage_guid_2, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
+        )
+        self.assertEqual([4,], service_transfer.edge_transport_guids_delivery_from_storage_to_storage(storage_donor_guid_1, storage_pickup_guid_3))
+        self.assertEqual(
+            [
+                (1, datetime.datetime(2019, 7, 1, 17, 0, tzinfo=pytz.UTC), 4, 3, datetime.datetime(2019, 7, 3, 10, 45, tzinfo=pytz.UTC),),
+            ],
+            service_transfer.edge_delivery(storage_donor_guid_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
+        )
+
+        # Финал
+        transport_guids_allow_for_stock = [1,2,3,4]
+        self.assertEqual(
+            [
+                [
+                    (1, datetime.datetime(2019, 7, 1, 17, 0, tzinfo=pytz.UTC), 4, 3, datetime.datetime(2019, 7, 3, 10, 45, tzinfo=pytz.UTC),),
+                ],
+                [
+                    (1, datetime.datetime(2019, 7, 1, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 1, 19, 0, tzinfo=pytz.UTC),),
+                    (2, datetime.datetime(2019, 7, 2, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 2, 11, 0, tzinfo=pytz.UTC),),
+                ],
+            ],
+            service_transfer.fast_all_chains(storage_donor_guid_1, storage_pickup_guid_3, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
+        )
+        transport_guids_allow_for_stock = [1,2,3,4]
+        self.assertEqual(
+            [
+                (1, datetime.datetime(2019, 7, 1, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 1, 19, 0, tzinfo=pytz.UTC),),
+                (2, datetime.datetime(2019, 7, 2, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 2, 11, 0, tzinfo=pytz.UTC),),
+            ],
+            service_transfer.fast_chain(storage_donor_guid_1, storage_pickup_guid_3, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
+        )
+        self.assertEqual(
+            None,
+            service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
+        )
+
+        # Доабвили скоростной поед
+        service_transfer.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 1, 18, 00, 00, tzinfo=pytz.UTC), transport_train_guid_4, storage_pickup_guid_3, datetime.datetime(2019, 7, 2, 10, 23, 00, tzinfo=pytz.UTC))
+        transport_guids_allow_for_stock = [1,2,3,4]
+        self.assertEqual(
+            [
+                (1, datetime.datetime(2019, 7, 1, 18, 0, tzinfo=pytz.UTC), 4, 3, datetime.datetime(2019, 7, 2, 10, 23, tzinfo=pytz.UTC),),
+            ],
+            service_transfer.fast_chain(storage_donor_guid_1, storage_pickup_guid_3, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
+        )
+        self.assertEqual(
+            None,
+            service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
+        )
+

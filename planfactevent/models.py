@@ -413,7 +413,7 @@ class ServiceTransferProductFromTo(object):
             chain_temp = chain[:]
             if schedule[0] == storage_depart_guid:
                 if schedule[3] == storage_arrival_guid:
-                    print schedule[0], '+', schedule[3] 
+                    print schedule[0], '+', schedule[3]
                     return chain_temp + [schedule[0], storage_arrival_guid]
                 else:
                     print schedule[0], '->'
@@ -421,22 +421,32 @@ class ServiceTransferProductFromTo(object):
                     return self.__chain_master(chain_temp, schedule[3], storage_arrival_guid)
         print '-'
 
+    def __chain_master_v2(self, chains, storage_depart_guid, storage_arrival_guid, item):
+        for schedule in self.__schedules:
+            item_temp = item[:]
+            if schedule[0] == storage_depart_guid:
+                if schedule[3] == storage_arrival_guid:
+                    #print schedule[0], '+', schedule[3]
+                    chains.append(item_temp + [schedule[0], storage_arrival_guid])
+                else:
+                    #print schedule[0], '->'
+                    item_temp.append(schedule[0])
+                    self.__chain_master_v2(chains, schedule[3], storage_arrival_guid, item_temp)
+        #print '-'
+
     def chains_storage_delivery_from_storage_to_storage(self, storage_guid, storage_pickup_guid):
         #if storage_guid == 1:
         #    return [[1,2,3]]
         #elif storage_guid == 4:
         #    return [[4,5]]
         #assert False
-        chains = [self.__chain_master([], storage_guid, storage_pickup_guid)]
-        for chain in chains:
-            print chain
-        return chains
 
-    def fact(num):
-        if num == 0: 
-            return 1 # По договоренности факториал нуля равен единице
-        else:
-            return num * fact(num - 1) #
+        #chains = [self.__chain_master([], storage_guid, storage_pickup_guid)]
+        chains = []
+        self.__chain_master_v2(chains, storage_guid, storage_pickup_guid, [])
+        #for chain in chains:
+        #    print chain
+        return sorted(sorted(list(set(map(lambda x :tuple(x), chains))), key=lambda x: [1]), key=lambda x: len(x))
 
     def datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_depart):
         datetimes_arrival = set()
@@ -494,7 +504,7 @@ class ServiceTransferProductFromTo(object):
         return items_edge_delivery
         #return sorted(items_edge_delivery, key=lambda x: x[4])
 
-    def fast_chain(self, storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup):
+    def fast_all_chains(self, storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup):
         chians = []
         for chain_storage_delivery in self.chains_storage_delivery_from_storage_to_storage(storage_guid, storage_pickup_guid):
             items_delivery = []
@@ -518,11 +528,13 @@ class ServiceTransferProductFromTo(object):
                 fast_chain.append(item[0])
 
             chians.append(fast_chain)
+        return chians
 
+    def fast_chain(self, storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup):
+        fast_all_chains = self.fast_all_chains(storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup)
         # разные цепочки сортиуем по дате доставки
-        sorted(chians, key=lambda i: i[-1][4])
-        very_fast_chain = chians[0]
-
+        fast_all_chains.sort(key=lambda i: i[-1][4])
+        very_fast_chain = fast_all_chains[0]
         return very_fast_chain
 
     def __init__(self):
