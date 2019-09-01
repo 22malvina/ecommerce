@@ -488,7 +488,11 @@ class ServiceTransferProductFromTo(object):
             assert False
         if len(items_edge_delivery) == 0:
             assert False
+        items_edge_delivery.sort(key=lambda x: x[2])
+        items_edge_delivery.sort(key=lambda x: x[1])
+        items_edge_delivery.sort(key=lambda x: x[4])
         return items_edge_delivery
+        #return sorted(items_edge_delivery, key=lambda x: x[4])
 
     def fast_chain(self, storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup):
         chians = []
