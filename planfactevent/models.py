@@ -386,10 +386,7 @@ class FacrtoryProductGuidWithQuantity(object):
             )
         return elements
 
-class RepositorySchedule(object):
-    def add_schedule(self, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival):
-        self.__schedules.append((storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival))
-
+class Graph(object):
     def __chain_master(self, chain, storage_depart_guid, storage_arrival_guid):
         for schedule in self.__schedules:
             chain_temp = chain[:]
@@ -400,7 +397,7 @@ class RepositorySchedule(object):
                     chain_temp.append(schedule[0])
                     return self.__chain_master(chain_temp, schedule[3], storage_arrival_guid)
 
-    def chain_master_v2(self, chains, storage_depart_guid, storage_arrival_guid, item):
+    def __chain_master_v2(self, chains, storage_depart_guid, storage_arrival_guid, item):
         for schedule in self.__schedules:
             item_temp = item[:]
             if schedule[0] == storage_depart_guid:
@@ -409,6 +406,28 @@ class RepositorySchedule(object):
                 else:
                     item_temp.append(schedule[0])
                     self.chain_master_v2(chains, schedule[3], storage_arrival_guid, item_temp)
+
+    def __chain_master_v3(self, chains, storage_depart_guid, storage_arrival_guid, item):
+        for edge in self.__repository_schedule.edges():
+            item_temp = item[:]
+            if edge[0] == storage_depart_guid:
+                if edge[1] == storage_arrival_guid:
+                    chains.append(item_temp + [edge[0], storage_arrival_guid])
+                else:
+                    item_temp.append(edge[0])
+                    self.__chain_master_v3(chains, edge[1], storage_arrival_guid, item_temp)
+
+    def chain_master(self, storage_depart_guid, storage_arrival_guid):
+        chains = []
+        self.__chain_master_v3(chains, storage_depart_guid, storage_arrival_guid, [])
+        return sorted(sorted(list(set(map(lambda x :tuple(x), chains))), key=lambda x: [1]), key=lambda x: len(x))
+
+    def __init__(self, repository_schedule):
+        self.__repository_schedule = repository_schedule
+
+class RepositorySchedule(object):
+    def add_schedule(self, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival):
+        self.__schedules.append((storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival))
 
     def datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_depart):
         datetimes_arrival = set()
@@ -424,6 +443,12 @@ class RepositorySchedule(object):
                 and datetime_start <= schedule[1] <= datetime_pickup:
                 datetimes_depart.add(schedule[1])
         return sorted(list(datetimes_depart))
+
+    def edges(self):
+        edges = set()
+        for schedule in self.__schedules:
+            edges.add((schedule[0], schedule[3]))
+        return list(edges)
 
     def transport_guids_delivery_from_storage_to_storage(self, storage_guid_depart, storage_guid_arrival):
         transport_guids = set()
@@ -453,10 +478,9 @@ class ServiceTransferProductFromTo(object):
         #return PlanFactEvent.storage_guids()
         return self.__storage_guids
 
-    def chains_storage_delivery_from_storage_to_storage(self, storage_guid, storage_pickup_guid):
-        chains = []
-        self.__repository_schedule.chain_master_v2(chains, storage_guid, storage_pickup_guid, [])
-        return sorted(sorted(list(set(map(lambda x :tuple(x), chains))), key=lambda x: [1]), key=lambda x: len(x))
+    #def chains_storage_delivery_from_storage_to_storage(self, storage_guid, storage_pickup_guid):
+    #    return self.__graph.chain_master(storage_guid, storage_pickup_guid)
+    #    #return sorted(sorted(list(set(map(lambda x :tuple(x), chains))), key=lambda x: [1]), key=lambda x: len(x))
 
     def edge_transport_delivery_from_storage_to_storage_in_datetime_range(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
         items_edge_delivery = []
@@ -494,7 +518,8 @@ class ServiceTransferProductFromTo(object):
 
     def fast_all_chains(self, storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup):
         chians = []
-        for chain_storage_delivery in self.chains_storage_delivery_from_storage_to_storage(storage_guid, storage_pickup_guid):
+        #for chain_storage_delivery in self.chains_storage_delivery_from_storage_to_storage(storage_guid, storage_pickup_guid):
+        for chain_storage_delivery in self.__graph.chain_master(storage_guid, storage_pickup_guid):
             items_delivery = []
             for i in range(1,len(chain_storage_delivery)):
                 storage_guid_depart = chain_storage_delivery[i-1]
@@ -525,10 +550,11 @@ class ServiceTransferProductFromTo(object):
         very_fast_chain = fast_all_chains[0]
         return very_fast_chain
 
-    def __init__(self, repository_schedule):
+    def __init__(self, repository_schedule, graph):
         self.__storage_guids = []
         self.__transport_guids = []
         self.__repository_schedule = repository_schedule
+        self.__graph = graph
 
     def move(self, product_guid, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival):
         #Получить столько информаци по имеющимся сейчас релальным товарам на складе чтобы потом их же списать, транспортировать и принять уже на другом.

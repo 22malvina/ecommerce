@@ -128,7 +128,8 @@ class TestEStorage(TestCase):
         self.assertEqual(0, PlanFactEvent.count_product_with_serial_number([], []))
 
         repository_schedule = RepositorySchedule()
-        service_transfer = ServiceTransferProductFromTo(repository_schedule)
+        graph = Graph(repository_schedule)
+        service_transfer = ServiceTransferProductFromTo(repository_schedule, graph)
 
         storage_depart_guid = 1
         storage_arrival_guid = 2
@@ -261,7 +262,8 @@ class TestEStorage(TestCase):
         """
 
         repository_schedule = RepositorySchedule()
-        service_transfer = ServiceTransferProductFromTo(repository_schedule)
+        graph = Graph(repository_schedule)
+        service_transfer = ServiceTransferProductFromTo(repository_schedule, graph)
         service_order = ServiceOrder(service_transfer)
         #service_order.create_order_sale_pickup(cargo, )
         basket_1 = []
@@ -287,7 +289,7 @@ class TestEStorage(TestCase):
         self.assertEqual([storage_donor_guid_1, storage_guid_2, storage_pickup_guid_3], service_transfer.all_storage_guids())
         self.assertEqual(
             [(storage_donor_guid_1, storage_guid_2, storage_pickup_guid_3)],
-            service_transfer.chains_storage_delivery_from_storage_to_storage(storage_donor_guid_1, storage_pickup_guid_3)
+            graph.chain_master(storage_donor_guid_1, storage_pickup_guid_3)
         )
         self.assertEqual(
             [datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC)],
@@ -409,7 +411,8 @@ class TestEStorage(TestCase):
 
         """
         repository_schedule = RepositorySchedule()
-        service_transfer = ServiceTransferProductFromTo(repository_schedule)
+        graph = Graph(repository_schedule)
+        service_transfer = ServiceTransferProductFromTo(repository_schedule, graph)
         service_order = ServiceOrder(service_transfer)
         basket_1 = []
         storage_guid_4 = 4
@@ -427,7 +430,7 @@ class TestEStorage(TestCase):
         self.assertEqual([storage_guid_4, storage_pickup_guid_5], service_transfer.all_storage_guids())
         self.assertEqual(
             [(storage_guid_4, storage_pickup_guid_5)],
-            service_transfer.chains_storage_delivery_from_storage_to_storage(storage_guid_4, storage_pickup_guid_5)
+            graph.chain_master(storage_guid_4, storage_pickup_guid_5)
         )
         self.assertEqual(
             [datetime.datetime(2019, 8, 2, 16, 00, 00, tzinfo=pytz.UTC)],
@@ -505,7 +508,8 @@ class TestEStorage(TestCase):
 
         """
         repository_schedule = RepositorySchedule()
-        service_transfer = ServiceTransferProductFromTo(repository_schedule)
+        graph = Graph(repository_schedule)
+        service_transfer = ServiceTransferProductFromTo(repository_schedule, graph)
         service_order = ServiceOrder(service_transfer)
         basket_1 = []
         storage_guid_4 = 4
@@ -558,7 +562,7 @@ class TestEStorage(TestCase):
         self.assertEqual([storage_guid_4, storage_pickup_guid_5], service_transfer.all_storage_guids())
         self.assertEqual(
             [(storage_guid_4, storage_pickup_guid_5)],
-            service_transfer.chains_storage_delivery_from_storage_to_storage(storage_guid_4, storage_pickup_guid_5)
+            graph.chain_master(storage_guid_4, storage_pickup_guid_5)
         )
         self.assertEqual(
             [datetime.datetime(2019, 8, 2, 16, 00, 00, tzinfo=pytz.UTC)],
@@ -669,7 +673,8 @@ class TestEStorage(TestCase):
 
         """
         repository_schedule = RepositorySchedule()
-        service_transfer = ServiceTransferProductFromTo(repository_schedule)
+        graph = Graph(repository_schedule)
+        service_transfer = ServiceTransferProductFromTo(repository_schedule, graph)
         service_order = ServiceOrder(service_transfer)
         #service_order.create_order_sale_pickup(cargo, )
         basket_1 = []
@@ -727,7 +732,7 @@ class TestEStorage(TestCase):
                 (storage_donor_guid_1, storage_pickup_guid_3),
                 (storage_donor_guid_1, storage_guid_2, storage_pickup_guid_3),
             ],
-            service_transfer.chains_storage_delivery_from_storage_to_storage(storage_donor_guid_1, storage_pickup_guid_3)
+            graph.chain_master(storage_donor_guid_1, storage_pickup_guid_3)
         )
         self.assertEqual(
             [datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC)],
