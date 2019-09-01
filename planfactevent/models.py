@@ -5,6 +5,7 @@ from django.db.models import Sum
 
 import datetime
 import pytz
+#import copy
 
 class PlanFactEvent(models.Model):
     """
@@ -392,40 +393,65 @@ class ServiceTransferProductFromTo(object):
         Отслеживать можно что товар нелдьзя списато до того как зачислить,
             При таком подходе отирцательные остатки не возможны.
     """
-    def add_storage(self, storage_guid):
-        self.__storages.append(storage_guid)
+
+    def add_schedule(self, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival):
+        self.__schedules.append((storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival))
+
+    def add_storage_guid(self, storage_guid):
+        self.__storage_guids.append(storage_guid)
+
+    def add_transport_guid(self, transport_guid):
+        self.__transport_guids.append(transport_guid)
 
     def all_storage_guids(self):
         #return PlanFactEvent.storage_guids()
         #return [1,2,3]
-        return self.__storages
+        return self.__storage_guids
+
+    def __chain_master(self, chain, storage_depart_guid, storage_arrival_guid):
+        for schedule in self.__schedules:
+            chain_temp = chain[:]
+            if schedule[0] == storage_depart_guid:
+                if schedule[3] == storage_arrival_guid:
+                    print schedule[0], '+', schedule[3] 
+                    return chain_temp + [schedule[0], storage_arrival_guid]
+                else:
+                    print schedule[0], '->'
+                    chain_temp.append(schedule[0])
+                    return self.__chain_master(chain_temp, schedule[3], storage_arrival_guid)
+        print '-'
 
     def chains_storage_delivery_from_storage_to_storage(self, storage_guid, storage_pickup_guid):
-        if storage_guid == 1:
-            return [[1,2,3]]
-        elif storage_guid == 4:
-            return [[4,5]]
-        assert False
+        #if storage_guid == 1:
+        #    return [[1,2,3]]
+        #elif storage_guid == 4:
+        #    return [[4,5]]
+        #assert False
+        chains = [self.__chain_master([], storage_guid, storage_pickup_guid)]
+        for chain in chains:
+            print chain
+        return chains
+
+    def fact(num):
+        if num == 0: 
+            return 1 # По договоренности факториал нуля равен единице
+        else:
+            return num * fact(num - 1) #
 
     def datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_depart):
-        #return [datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC)]
-        if storage_guid_depart == 1:
-            return [datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC)]
-        elif storage_guid_depart == 2:
-            return [datetime.datetime(2019, 7, 2, 11, 00, 00, tzinfo=pytz.UTC)]
-        elif storage_guid_depart == 4:
-            return [datetime.datetime(2019, 8, 2, 16, 00, 00, tzinfo=pytz.UTC)]
-        assert False
+        datetimes_arrival = set()
+        for schedule in self.__schedules:
+            if schedule[0] == storage_guid_depart and schedule[1] == datetime_depart and schedule[2] == transport_guid and schedule[3] == storage_guid_arrival:
+                datetimes_arrival.add(schedule[4])
+        return sorted(list(datetimes_arrival))
 
     def datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
-        #return [datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC)]
-        if storage_guid_depart == 1:
-            return [datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC)]
-        elif storage_guid_depart == 2:
-            return [datetime.datetime(2019, 7, 2, 10, 00, 00, tzinfo=pytz.UTC)]
-        elif storage_guid_depart == 4:
-            return [datetime.datetime(2019, 8, 2, 14, 30, 00, tzinfo=pytz.UTC)]
-        assert False
+        datetimes_depart = set()
+        for schedule in self.__schedules:
+            if schedule[0] == storage_guid_depart and schedule[2] == transport_guid and schedule[3] == storage_guid_arrival \
+                and datetime_start <= schedule[1] <= datetime_pickup:
+                datetimes_depart.add(schedule[1])
+        return sorted(list(datetimes_depart))
 
     def edge_transport_delivery_from_storage_to_storage_in_datetime_range(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
         items_edge_delivery = []
@@ -443,14 +469,11 @@ class ServiceTransferProductFromTo(object):
         return items_edge_delivery
 
     def edge_transport_guids_delivery_from_storage_to_storage(self, storage_guid_depart, storage_guid_arrival):
-        #return [1]
-        if storage_guid_depart == 1:
-            return [1]
-        elif storage_guid_depart == 2:
-            return [2]
-        elif storage_guid_depart == 4:
-            return [2]
-        assert False
+        transport_guids = set()
+        for schedule in self.__schedules:
+            if schedule[0] == storage_guid_depart and schedule[3] == storage_guid_arrival:
+                transport_guids.add(schedule[2])
+        return sorted(list(transport_guids))
 
     def edge_delivery(self, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
         # Формируем набор перемещений который проходи из с1 в с2 и укладывающийся в нужный времнной диапазон 
@@ -499,7 +522,9 @@ class ServiceTransferProductFromTo(object):
         return very_fast_chain
 
     def __init__(self):
-        self.__storages = []
+        self.__storage_guids = []
+        self.__transport_guids = []
+        self.__schedules = []
 
     def move(self, product_guid, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival):
         #Получить столько информаци по имеющимся сейчас релальным товарам на складе чтобы потом их же списать, транспортировать и принять уже на другом.

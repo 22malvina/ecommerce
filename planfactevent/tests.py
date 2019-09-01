@@ -266,12 +266,18 @@ class TestEStorage(TestCase):
         storage_guid_2 = 2
         storage_pickup_guid_3 = 3
 
-        service_transfer.add_storage(storage_donor_guid_1)
-        service_transfer.add_storage(storage_guid_2)
-        service_transfer.add_storage(storage_pickup_guid_3)
+        service_transfer.add_storage_guid(storage_donor_guid_1)
+        service_transfer.add_storage_guid(storage_guid_2)
+        service_transfer.add_storage_guid(storage_pickup_guid_3)
 
         transport_auto_guid_1 = 1
         transport_car_guid_2 = 2
+
+        service_transfer.add_transport_guid(transport_auto_guid_1)
+        service_transfer.add_transport_guid(transport_car_guid_2)
+        service_transfer.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC))
+        service_transfer.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 2, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 2, 11, 00, 00, tzinfo=pytz.UTC))
+
         datetime_create_order = datetime.datetime(2019, 7, 1, 12, 15, 46, tzinfo=pytz.UTC)
         datetime_pickup = datetime.datetime(2019, 7, 7, 9, 13, 00, tzinfo=pytz.UTC)
 
@@ -404,9 +410,13 @@ class TestEStorage(TestCase):
         basket_1 = []
         storage_guid_4 = 4
         storage_pickup_guid_5 = 5
+        service_transfer.add_storage_guid(storage_guid_4)
+        service_transfer.add_storage_guid(storage_pickup_guid_5)
         transport_car_guid_2 = 2
-        service_transfer.add_storage(storage_guid_4)
-        service_transfer.add_storage(storage_pickup_guid_5)
+        service_transfer.add_transport_guid(transport_car_guid_2)
+        #storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival
+        service_transfer.add_schedule(storage_guid_4, datetime.datetime(2019, 8, 2, 14, 30, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_5, datetime.datetime(2019, 8, 2, 16, 00, 00, tzinfo=pytz.UTC))
+
         datetime_create_order = datetime.datetime(2019, 8, 1, 15, 1, 23, tzinfo=pytz.UTC)
         datetime_pickup = datetime.datetime(2019, 8, 3, 14, 00, 00, tzinfo=pytz.UTC)
 
