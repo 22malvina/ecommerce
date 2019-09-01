@@ -380,7 +380,7 @@ class TestEStorage(TestCase):
                     datetime.datetime(2019, 7, 2, 11, 0, tzinfo=pytz.UTC),
                 ),
             ],
-            service_transfer.fast_chain(storage_donor_guid_1, storage_pickup_guid_3, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
+            service_transfer.fast_schedule(storage_donor_guid_1, storage_pickup_guid_3, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
         )
         self.assertEqual(
             None,
@@ -478,7 +478,7 @@ class TestEStorage(TestCase):
                     datetime.datetime(2019, 8, 2, 16, 0, tzinfo=pytz.UTC),
                 ),
             ],
-            service_transfer.fast_chain(storage_guid_4, storage_pickup_guid_5, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
+            service_transfer.fast_schedule(storage_guid_4, storage_pickup_guid_5, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
         )
         self.assertEqual(
             None,
@@ -624,7 +624,7 @@ class TestEStorage(TestCase):
                     datetime.datetime(2019, 8, 2, 15, 10, tzinfo=pytz.UTC),
                 ),
             ],
-            service_transfer.fast_chain(storage_guid_4, storage_pickup_guid_5, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
+            service_transfer.fast_schedule(storage_guid_4, storage_pickup_guid_5, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
         )
         self.assertEqual(
             None,
@@ -873,7 +873,7 @@ class TestEStorage(TestCase):
                     (2, datetime.datetime(2019, 7, 2, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 2, 11, 0, tzinfo=pytz.UTC),),
                 ],
             ],
-            service_transfer.fast_all_chains(storage_donor_guid_1, storage_pickup_guid_3, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
+            service_transfer.fast_schedules_for_chains(storage_donor_guid_1, storage_pickup_guid_3, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
         )
         transport_guids_allow_for_stock = [1,2,3,4]
         self.assertEqual(
@@ -881,7 +881,7 @@ class TestEStorage(TestCase):
                 (1, datetime.datetime(2019, 7, 1, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 1, 19, 0, tzinfo=pytz.UTC),),
                 (2, datetime.datetime(2019, 7, 2, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 2, 11, 0, tzinfo=pytz.UTC),),
             ],
-            service_transfer.fast_chain(storage_donor_guid_1, storage_pickup_guid_3, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
+            service_transfer.fast_schedule(storage_donor_guid_1, storage_pickup_guid_3, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
         )
         self.assertEqual(
             None,
@@ -895,7 +895,7 @@ class TestEStorage(TestCase):
             [
                 (1, datetime.datetime(2019, 7, 1, 18, 0, tzinfo=pytz.UTC), 4, 3, datetime.datetime(2019, 7, 2, 10, 23, tzinfo=pytz.UTC),),
             ],
-            service_transfer.fast_chain(storage_donor_guid_1, storage_pickup_guid_3, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
+            service_transfer.fast_schedule(storage_donor_guid_1, storage_pickup_guid_3, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
         )
         self.assertEqual(
             None,

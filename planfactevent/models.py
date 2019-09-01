@@ -512,35 +512,38 @@ class ServiceTransferProductFromTo(object):
         return items_edge_delivery
         #return sorted(items_edge_delivery, key=lambda x: x[4])
 
-    def fast_all_chains(self, storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup):
+    def fast_schedule_for_chain(self, chain, transport_guids_allow_for_stock, datetime_start, datetime_pickup):
+        items_delivery = []
+        for i in range(1,len(chain)):
+            storage_guid_depart = chain[i-1]
+            storage_guid_arrival = chain[i]
+            items_edge_delivery = self.edge_delivery(storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup)
+            items_delivery.append(items_edge_delivery)
+
+        # Находим кратчайший маршрут из набора возможных перемещенеий между ребрарами
+        fast_chain = []
+        currnet_datetime = None
+        for item in items_delivery:
+            if currnet_datetime:
+                filter(lambda i: i[4] > currnet_datetime, item)
+            filter(lambda i: i[2] in transport_guids_allow_for_stock, item)
+            if not item:
+                raise False
+            sorted(item, key=lambda i: i[4])
+            currnet_datetime = item[0][4]
+            fast_chain.append(item[0])
+        return fast_chain
+
+    def fast_schedules_for_chains(self, storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup):
         chians = []
         #for chain_storage_delivery in self.chains_storage_delivery_from_storage_to_storage(storage_guid, storage_pickup_guid):
         for chain_storage_delivery in self.__graph.chain_master(storage_guid, storage_pickup_guid):
-            items_delivery = []
-            for i in range(1,len(chain_storage_delivery)):
-                storage_guid_depart = chain_storage_delivery[i-1]
-                storage_guid_arrival = chain_storage_delivery[i]
-                items_edge_delivery = self.edge_delivery(storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup)
-                items_delivery.append(items_edge_delivery)
-
-            # Находим кратчайший маршрут из набора возможных перемещенеий между ребрарами
-            fast_chain = []
-            currnet_datetime = None
-            for item in items_delivery:
-                if currnet_datetime:
-                    filter(lambda i: i[4] > currnet_datetime, item)
-                filter(lambda i: i[2] in transport_guids_allow_for_stock, item)
-                if not item:
-                    raise False
-                sorted(item, key=lambda i: i[4])
-                currnet_datetime = item[0][4]
-                fast_chain.append(item[0])
-
+            fast_chain = self.fast_schedule_for_chain(chain_storage_delivery, transport_guids_allow_for_stock, datetime_start, datetime_pickup)
             chians.append(fast_chain)
         return chians
 
-    def fast_chain(self, storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup):
-        fast_all_chains = self.fast_all_chains(storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup)
+    def fast_schedule(self, storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup):
+        fast_all_chains = self.fast_schedules_for_chains(storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup)
         # разные цепочки сортиуем по дате доставки
         fast_all_chains.sort(key=lambda i: i[-1][4])
         very_fast_chain = fast_all_chains[0]
@@ -696,7 +699,7 @@ class ServiceOrder(object):
             for storage_guid in self.__service_transfer.all_storage_guids():
                 for stock in self.__service_transfer.stocks_ready_for_move(storage_guid, product_guid):
                     transport_guids_allow_for_stock = self.__service_transfer.transport_guids_allow_for_stock(stock)
-                    chain = self.__service_transfer.fast_chain(storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup)
+                    chain = self.__service_transfer.fast_schedule(storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup)
 
                     #product_guid = stock[0]
                     #quantity_for_transfer = stock[2]
