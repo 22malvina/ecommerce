@@ -658,6 +658,9 @@ class ServiceTransferProductFromTo(object):
                     assert False
         return list(stocks)
 
+    def transport_guids_allow_for_product(self, product_guid):
+        return []
+
 class ServiceOrder(object):
     """
     Сервис будет создавать заказы.
@@ -677,11 +680,24 @@ class ServiceOrder(object):
         Как учесть что заланировано и не сделано от того что запланировано но поменялось?
     """
 
+    def count_product(self, basket, product_guid):
+        count = 0
+        for item in basket:
+            if self.get_product_guid(item) == product_guid:
+                count += self.get_quantity(item)
+        return count
+
+    def get_product_guid(self, basket_item):
+        return basket_item[0]
+
+    def get_quantity(self, basket_item):
+        return basket_item[1]
+
     def __list_stocks_for_basket(self, basket):
         stocks = []
         # Получили остатки нужных товаров от всех складов
         for item in basket:
-            product_guid = item.get_product_guid()
+            product_guid = self.get_product_guid(item)
             for storage_guid in self.__service_transfer.all_storage_guids():
                 for stock in self.__service_transfer.stocks_ready_for_move(storage_guid, product_guid):
                     stocks.append(stock)
@@ -693,13 +709,19 @@ class ServiceOrder(object):
 
         groups_events_posible_for_product = {}
 
+        routes = []
         for item in basket:
-            product_guid = item.get_product_guid()
+            product_guid = self.get_product_guid(item)
             groups_events_posible = []
+            transport_guids_allow_for_product = self.__service_transfer.transport_guids_allow_for_product(product_guid)
             for storage_guid in self.__service_transfer.all_storage_guids():
-                for stock in self.__service_transfer.stocks_ready_for_move(storage_guid, product_guid):
-                    transport_guids_allow_for_stock = self.__service_transfer.transport_guids_allow_for_stock(stock)
-                    chain = self.__service_transfer.fast_schedule(storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup)
+                #for stock in self.__service_transfer.stocks_ready_for_move(storage_guid, product_guid):
+                #    transport_guids_allow_for_stock = self.__service_transfer.transport_guids_allow_for_stock(stock)
+                #    route = self.__service_transfer.fast_schedule(storage_guid, storage_pickup_guid, transport_guids_allow_for_stock, datetime_start, datetime_pickup)
+                #    routes.apend(route)
+
+                    #for item in route:
+                    #    self.__service_transfer.move(stock[0], stock[2],  
 
                     #product_guid = stock[0]
                     #quantity_for_transfer = stock[2]
@@ -708,7 +730,27 @@ class ServiceOrder(object):
                     #for transport_guid in self.__service_transfer.transport_guids_delivery_form_to(storage_guid, storage_pickup_guid)
                     #self.__service_transfer.move(product_guid, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_pickup_guid, datetime_arrival):
 
+                if self.__service_transfer.stocks_ready_for_move(storage_guid, product_guid):
+                    fast_route = self.__service_transfer.fast_schedule(storage_guid, storage_pickup_guid, transport_guids_allow_for_product, datetime_start, datetime_pickup)
+                    routes.append(fast_route)
+
+        # Поштучно перевозить все остатки по самым быстрым перемеениям
         plan_events = []
+        basket_already_move = []
+        for item in basket:
+            product_guid = self.get_product_guid(item)
+            groups_events_posible = []
+            for route in sorted(routes, key=lambda x: x[-1][4]):
+                storage_guid = route[0][0]
+                for stock in self.__service_transfer.stocks_ready_for_move(storage_guid, product_guid):
+                    if self.count_product(basket_already_move, product_guid) < self.count_product(basket, product_guid):
+                        for item in route:
+                            self.__service_transfer.move(stock[0], stock[2], item[0], item[1], item[2], item[3], item[4])
+                            plan_events.append((stock[0], stock[2], item[0], item[1], item[2], item[3], item[4]))
+                        # удалить нужное количество перемещенны элементов из корзины, и если в корзине нет больще элементов то перети к следующему
+                        basket_already_move.append((stock[0], stock[2]))
+                    else:
+                        print ',',
         return plan_events
 
     def __has_basket_on_stocks(self, basket):
@@ -724,14 +766,15 @@ class ServiceOrder(object):
         # Протверили что все что указано в корзине есть на каких то складах в данный момент времни.
         #  Разбираем случай когда stock - это один серийный товар
         for item in basket:
-            product_guid = item.get_product_guid()
-            for i in range(0, item.get_quantity()):
+            product_guid = self.get_product_guid(item)
+            for i in range(0, self.get_quantity(item)):
                 temp_stock = None
                 for stock in stocks:
                     if stock[0] == product_guid:
                         temp_stock = stock
                         break
                 else:
+                    print 'Not find stock product = %s for basket %s' % (product_guid, basket)
                     # Не нашли на остатках товар из корзины
                     return False
                 stocks.remove(temp_stock)
@@ -749,6 +792,7 @@ class ServiceOrder(object):
             #product_guids_with_quantity = FacrtoryProductGuidWithQuantityFromBasket().create(basket)
             #plan_events = self.__generate_plan_event_for_delivery_product_guids_with_quantity_to_client(product_guids_with_quantity, basket, storage_pickup_guid, datetime_pickup)
             plan_events = self.__generate_plan_event_for_delivery_basket_to_client(basket, storage_pickup_guid, datetime_start, datetime_pickup)
-            pass
+
+            return plan_events
 
 

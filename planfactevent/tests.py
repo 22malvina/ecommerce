@@ -266,10 +266,20 @@ class TestEStorage(TestCase):
         service_transfer = ServiceTransferProductFromTo(repository_schedule, graph)
         service_order = ServiceOrder(service_transfer)
         #service_order.create_order_sale_pickup(cargo, )
-        basket_1 = []
+
+        product_guid_mi8 = 1
+        purchase_cost_mi8 = 105.1
+        currency_mi8 = "USD"
+
+        quantity_mi8 = 1
+        basket_1 = [(product_guid_mi8, quantity_mi8),]
         storage_donor_guid_1 = 1
         storage_guid_2 = 2
         storage_pickup_guid_3 = 3
+
+        datetime_process = datetime.datetime(2001, 1, 1, 12, 30, 00, tzinfo=pytz.UTC)
+        plan_fact_event = PlanFactEvent.objects.create(datetime_process=datetime_process, storage_guid=storage_donor_guid_1, product_guid=product_guid_mi8, serial_number=1001, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(datetime_process=datetime_process, storage_guid=storage_donor_guid_1, product_guid=product_guid_mi8, serial_number=1002, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
 
         service_transfer.add_storage_guid(storage_donor_guid_1)
         service_transfer.add_storage_guid(storage_guid_2)
@@ -382,11 +392,22 @@ class TestEStorage(TestCase):
             ],
             service_transfer.fast_schedule(storage_donor_guid_1, storage_pickup_guid_3, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
         )
+
+        #for plan_fact_event in PlanFactEvent.objects.filter(is_in=True, is_out=False, is_plan=False, is_fact=True):
+        for plan_fact_event in PlanFactEvent.objects.all():
+            print plan_fact_event
         self.assertEqual(
-            None,
+            [
+                (1, 1, 1, datetime.datetime(2019, 7, 1, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 1, 19, 0, tzinfo=pytz.UTC)),
+                (1, 1, 2, datetime.datetime(2019, 7, 2, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 2, 11, 0, tzinfo=pytz.UTC)),
+                #(1, 1, 1, datetime.datetime(2019, 7, 1, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 1, 19, 0, tzinfo=pytz.UTC)),
+                #(1, 1, 2, datetime.datetime(2019, 7, 2, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 2, 11, 0, tzinfo=pytz.UTC)),
+            ],
             service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
         )
-
+        for plan_fact_event in PlanFactEvent.objects.all():
+            print plan_fact_event
+ 
     def test_create_order_sale_pickup_2(self):
         """
         В test_create_order_sale_pickup_1 был приведн пример разарботке на основе TDD(подгоняем реализацию).
