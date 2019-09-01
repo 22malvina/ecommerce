@@ -392,13 +392,20 @@ class ServiceTransferProductFromTo(object):
         Отслеживать можно что товар нелдьзя списато до того как зачислить,
             При таком подходе отирцательные остатки не возможны.
     """
+    def add_storage(self, storage_guid):
+        self.__storages.append(storage_guid)
 
     def all_storage_guids(self):
         #return PlanFactEvent.storage_guids()
-        return [1,2,3]
+        #return [1,2,3]
+        return self.__storages
 
     def chains_storage_delivery_from_storage_to_storage(self, storage_guid, storage_pickup_guid):
-        return [[1,2,3]]
+        if storage_guid == 1:
+            return [[1,2,3]]
+        elif storage_guid == 4:
+            return [[4,5]]
+        assert False
 
     def datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_depart):
         #return [datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC)]
@@ -406,6 +413,9 @@ class ServiceTransferProductFromTo(object):
             return [datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC)]
         elif storage_guid_depart == 2:
             return [datetime.datetime(2019, 7, 2, 11, 00, 00, tzinfo=pytz.UTC)]
+        elif storage_guid_depart == 4:
+            return [datetime.datetime(2019, 8, 2, 16, 00, 00, tzinfo=pytz.UTC)]
+        assert False
 
     def datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
         #return [datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC)]
@@ -413,6 +423,9 @@ class ServiceTransferProductFromTo(object):
             return [datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC)]
         elif storage_guid_depart == 2:
             return [datetime.datetime(2019, 7, 2, 10, 00, 00, tzinfo=pytz.UTC)]
+        elif storage_guid_depart == 4:
+            return [datetime.datetime(2019, 8, 2, 14, 30, 00, tzinfo=pytz.UTC)]
+        assert False
 
     def edge_transport_delivery_from_storage_to_storage_in_datetime_range(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
         items_edge_delivery = []
@@ -435,6 +448,9 @@ class ServiceTransferProductFromTo(object):
             return [1]
         elif storage_guid_depart == 2:
             return [2]
+        elif storage_guid_depart == 4:
+            return [2]
+        assert False
 
     def edge_delivery(self, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
         # Формируем набор перемещений который проходи из с1 в с2 и укладывающийся в нужный времнной диапазон 
@@ -481,6 +497,9 @@ class ServiceTransferProductFromTo(object):
         very_fast_chain = chians[0]
 
         return very_fast_chain
+
+    def __init__(self):
+        self.__storages = []
 
     def move(self, product_guid, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival):
         #Получить столько информаци по имеющимся сейчас релальным товарам на складе чтобы потом их же списать, транспортировать и принять уже на другом.
