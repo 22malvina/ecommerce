@@ -403,7 +403,8 @@ class TestEStorage(TestCase):
                 #(1, 1, 1, datetime.datetime(2019, 7, 1, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 1, 19, 0, tzinfo=pytz.UTC)),
                 #(1, 1, 2, datetime.datetime(2019, 7, 2, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 2, 11, 0, tzinfo=pytz.UTC)),
             ],
-            service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
+            #service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
+            service_order.generate_plan_event_for_delivery_basket_to_client(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
         )
         for plan_fact_event in PlanFactEvent.objects.all():
             print plan_fact_event
@@ -503,7 +504,8 @@ class TestEStorage(TestCase):
         )
         self.assertEqual(
             [],
-            service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_5, datetime_create_order, datetime_pickup)
+            #service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_5, datetime_create_order, datetime_pickup)
+            service_order.generate_plan_event_for_delivery_basket_to_client(basket_1, storage_pickup_guid_5, datetime_create_order, datetime_pickup)
         )
 
     def test_create_order_sale_pickup_3(self):
@@ -649,7 +651,8 @@ class TestEStorage(TestCase):
         )
         self.assertEqual(
             [],
-            service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_5, datetime_create_order, datetime_pickup)
+            #service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_5, datetime_create_order, datetime_pickup)
+            service_order.generate_plan_event_for_delivery_basket_to_client(basket_1, storage_pickup_guid_5, datetime_create_order, datetime_pickup)
         )
 
     def test_create_order_sale_pickup_4(self):
@@ -906,7 +909,8 @@ class TestEStorage(TestCase):
         )
         self.assertEqual(
             [],
-            service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
+            #service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
+            service_order.generate_plan_event_for_delivery_basket_to_client(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
         )
 
         # Доабвили скоростной поед
@@ -920,6 +924,7 @@ class TestEStorage(TestCase):
         )
         self.assertEqual(
             [],
-            service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
+            #service_order.create_order_sale_pickup(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
+            service_order.generate_plan_event_for_delivery_basket_to_client(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
         )
 

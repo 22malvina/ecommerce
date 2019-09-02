@@ -44,6 +44,8 @@ class ItemOrder(models.Model):
     #currency = models.CharField(u"Валюта закупки / реализации", max_length=200, null=True, blank=True)
     #price = models.DecimalField(u"Стоимость закупки / реализцаии", decimal_places=2, max_digits=7, null=True, blank=True)
 
+
+    plan_fact_event_guid = models.IntegerField(u"guid записи из PlanFactEvent говрящий выдаче товара клиенту")
     plan_event_guid = models.IntegerField(u"guid записи из PlanFactEvent говрящий о запланированном перемещении товара")
     fact_event_guid = models.IntegerField(u"guid записи из PlanFactEvent говрящий о осуществленном оперемещении товара")
 
@@ -744,7 +746,7 @@ class ServiceOrder(object):
         return stocks
 
     #def __generate_plan_event_for_delivery_product_guids_with_quantity_to_client(self, product_guids_with_quantity, basket, storage_pickup_guid, datetime_start, datetime_pickup):
-    def __generate_plan_event_for_delivery_basket_to_client(self, basket, storage_pickup_guid, datetime_start, datetime_pickup):
+    def generate_plan_event_for_delivery_basket_to_client(self, basket, storage_pickup_guid, datetime_start, datetime_pickup):
         #stocks = self.__list_stocks_for_basket(basket)
 
         groups_events_posible_for_product = {}
@@ -831,8 +833,20 @@ class ServiceOrder(object):
 
             #product_guids_with_quantity = FacrtoryProductGuidWithQuantityFromBasket().create(basket)
             #plan_events = self.__generate_plan_event_for_delivery_product_guids_with_quantity_to_client(product_guids_with_quantity, basket, storage_pickup_guid, datetime_pickup)
-            plan_events = self.__generate_plan_event_for_delivery_basket_to_client(basket, storage_pickup_guid, datetime_start, datetime_pickup)
+            plan_events = self.generate_plan_event_for_delivery_basket_to_client(basket, storage_pickup_guid, datetime_start, datetime_pickup)
 
             return plan_events
 
+
+#Order(models.Model):
+#    datetime_create = models.DateTimeField(u'дата и время создание', auto_now_add=True)
+#    is_sale = models.BooleanField(verbose_name=u'Реализация', default=False)
+#    is_purchase = models.BooleanField(verbose_name=u'Закупка', default=False)
+#    datetime_process = models.DateTimeField(u'дата и время проведения опрерации', null=True, blank=True)
+#    client_guid = models.IntegerField(u"guid клиента", null=True, blank=True)
+#ItemOrder(models.Model):
+#    order
+#    plan_event_guid
+#    fact_event_guid
+#    plan_fact_event_guid
 
