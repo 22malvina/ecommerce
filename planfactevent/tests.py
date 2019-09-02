@@ -707,6 +707,7 @@ class TestEStorage(TestCase):
         storage_pickup_guid_3 = 3
 
         service_transfer.add_storage_guid(storage_donor_guid_1)
+        service_transfer.add_storage_external_guid(storage_donor_guid_1)
         service_transfer.add_storage_guid(storage_guid_2)
         service_transfer.add_storage_guid(storage_pickup_guid_3)
 

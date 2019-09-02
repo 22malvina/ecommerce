@@ -509,9 +509,11 @@ class ServiceTransferProductFromTo(object):
         Отслеживать можно что товар нелдьзя списато до того как зачислить,
             При таком подходе отирцательные остатки не возможны.
     """
-
     def add_storage_guid(self, storage_guid):
         self.__storage_guids.append(storage_guid)
+
+    def add_storage_external_guid(self, storage_guid):
+        self.__storage_external_guids.append(storage_guid)
 
     def add_transport_guid(self, transport_guid):
         self.__transport_guids.append(transport_guid)
@@ -554,6 +556,7 @@ class ServiceTransferProductFromTo(object):
         return items_edge_delivery
         #return sorted(items_edge_delivery, key=lambda x: x[4])
 
+
     def fast_schedule_for_chain(self, chain, transport_guids_allow_for_stock, datetime_start, datetime_pickup):
         items_delivery = []
         for i in range(1,len(chain)):
@@ -591,8 +594,14 @@ class ServiceTransferProductFromTo(object):
         very_fast_chain = fast_all_chains[0]
         return very_fast_chain
 
+    def is_storage_exteranl(self, storage_guid):
+        if storage_guid in self.__storage_external_guids:
+            return True
+        return False
+
     def __init__(self, repository_schedule, graph):
         self.__storage_guids = []
+        self.__storage_external_guids = []
         self.__transport_guids = []
         self.__repository_schedule = repository_schedule
         self.__graph = graph
@@ -699,6 +708,9 @@ class ServiceTransferProductFromTo(object):
                 else:
                     assert False
         return list(stocks)
+
+    #def storage_external_guids(self):
+    #    return list(self.__storage_external_guids)
 
     def transport_guids_allow_for_product(self, product_guid):
         return []
@@ -828,6 +840,12 @@ class ServiceOrder(object):
     def __is_delivery(self, basket):
         return True
 
+    def __is_nead_pruchse_order(self, plan_events):
+        for item in plan_events:
+            if self.__service_transfer.is_storage_exteranl(item[2]):
+                return True
+        return False
+
     def create_order_sale_pickup(self, basket, storage_pickup_guid, datetime_start, datetime_pickup):
         if self.__has_basket_on_stocks(basket) and self.__is_delivery(basket):
 
@@ -835,7 +853,15 @@ class ServiceOrder(object):
             #plan_events = self.__generate_plan_event_for_delivery_product_guids_with_quantity_to_client(product_guids_with_quantity, basket, storage_pickup_guid, datetime_pickup)
             plan_events = self.generate_plan_event_for_delivery_basket_to_client(basket, storage_pickup_guid, datetime_start, datetime_pickup)
 
-            return plan_events
+            #return plan_events
+
+        if self.__is_nead_pruchse_order(plan_events):
+            create_order_purchase(plan_events)
+        create_order_sale(plan_events)
+
+        return []
+
+
 
 
 #Order(models.Model):
