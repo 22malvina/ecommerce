@@ -929,3 +929,155 @@ class TestEStorage(TestCase):
             service_order.generate_plan_event_for_delivery_basket_to_client(basket_1, storage_pickup_guid_3, datetime_create_order, datetime_pickup)
         )
 
+
+
+    def test_user_online_buy_1(self):
+        """
+        Клиент зашел на в кабинет(сайт - очень красивый кабинет) и ищет телефон xiaomi с более чем 8 GB оперативной памяти.
+        """
+
+        #datetime_process = timezone.now()
+
+        product_guid_mi8 = 1
+        repository_product = RepositoryProduct()
+        repository_product.add_product(product_guid_mi8)
+
+        repository_schedule = RepositorySchedule()
+        graph = Graph(repository_schedule)
+        service_transfer = ServiceTransferProductFromTo(repository_schedule, graph)
+        service_order = ServiceOrder(service_transfer)
+        #service_order.create_order_sale_pickup(cargo, )
+        basket_1 = []
+        storage_donor_guid_1 = 1
+        storage_guid_2 = 2
+        storage_pickup_guid_3 = 3
+
+        service_transfer.add_storage_guid(storage_donor_guid_1)
+        service_transfer.add_storage_external_guid(storage_donor_guid_1)
+        service_transfer.add_storage_guid(storage_guid_2)
+        service_transfer.add_storage_guid(storage_pickup_guid_3)
+        service_transfer.add_storage_pickup_guid(storage_pickup_guid_3)
+
+
+        transport_auto_guid_1 = 1
+        transport_car_guid_2 = 2
+        transport_auto_guid_3 = 3
+        transport_train_guid_4 = 4
+
+        service_transfer.add_transport_guid(transport_auto_guid_1)
+        service_transfer.add_transport_guid(transport_car_guid_2)
+
+        # добавляем текущие остатки на склад
+        self.assertEqual(0, PlanFactEvent.count_product([], []))
+        self.assertEqual(0, PlanFactEvent.count_product_with_serial_number([], []))
+        purchase_cost_mi8 = 105.1
+        currency_mi8 = "USD"
+        datetime_process = datetime.datetime(2001, 1, 1, 12, 30, 00, tzinfo=pytz.UTC)
+        plan_fact_event = PlanFactEvent.objects.create(
+            datetime_process=datetime_process, storage_guid=storage_donor_guid_1, product_guid=product_guid_mi8,
+            serial_number=1001, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(
+            datetime_process=datetime_process, storage_guid=storage_donor_guid_1, product_guid=product_guid_mi8,
+            serial_number=1002, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(
+            datetime_process=datetime_process, storage_guid=storage_donor_guid_1, product_guid=product_guid_mi8,
+            serial_number=1003, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        self.assertEqual(3, PlanFactEvent.count_product([storage_donor_guid_1], [product_guid_mi8]))
+        self.assertEqual(3, PlanFactEvent.count_product_with_serial_number([storage_donor_guid_1], [product_guid_mi8]))
+        self.assertEqual(0, PlanFactEvent.count_product([storage_guid_2], [product_guid_mi8]))
+        self.assertEqual(0, PlanFactEvent.count_product_with_serial_number([storage_guid_2], [product_guid_mi8]))
+
+        # заносим расписание перемещений 
+        repository_schedule.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 2, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 2, 19, 00, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 3, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 3, 19, 00, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 4, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 4, 19, 00, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 5, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 5, 19, 00, 00, tzinfo=pytz.UTC))
+
+        repository_schedule.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 2, 15, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_3, storage_guid_2, datetime.datetime(2019, 7, 2, 19, 10, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 4, 15, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_3, storage_guid_2, datetime.datetime(2019, 7, 4, 19, 10, 00, tzinfo=pytz.UTC))
+
+        repository_schedule.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 1, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 1, 11, 00, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 2, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 2, 11, 00, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 3, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 3, 11, 00, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 4, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 4, 11, 00, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 5, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 5, 11, 00, 00, tzinfo=pytz.UTC))
+
+        repository_schedule.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 1, 17, 00, 00, tzinfo=pytz.UTC), transport_train_guid_4, storage_pickup_guid_3, datetime.datetime(2019, 7, 3, 10, 45, 00, tzinfo=pytz.UTC))
+
+        # start
+
+        product_guids = repository_product.product_guids(
+            [
+                "Category == Mobile Phone",
+                "OZU > 8 GB",
+                "Brand ==Xiaomi",
+            ]
+        )
+        self.assertEqual([product_guid_mi8], product_guids)
+        # Выбрали продукт для покупки
+        product_for_buy = product_guids[0]
+
+        count_product_for_buy = PlanFactEvent.count_product([], [product_for_buy])
+        self.assertEqual(3, count_product_for_buy)
+
+        count_nead = 2
+        self.assertTrue(2 < count_product_for_buy)
+
+        basket = []
+        # положили продукт в корзину
+        basket.append(
+            {
+                "product": product_guid_mi8,
+                "quantity": count_nead,
+            }
+        )
+
+        # начальные данные когда заказ создается клиентом и когда забирается
+        datetime_create_order = datetime.datetime(2019, 7, 1, 12, 15, 46, tzinfo=pytz.UTC)
+        datetime_pickup = datetime.datetime(2019, 7, 7, 9, 13, 00, tzinfo=pytz.UTC)
+
+        pickup_guids = service_transfer.all_storage_pickup_guids()
+        self.assertEqual([storage_pickup_guid_3], pickup_guids)
+        # Выбрали точку получения
+        pickup_guid = pickup_guids[0]
+
+
+
+        transport_guids_allow_for_stock = [1,2,3,4]
+        self.assertEqual(
+            [
+                (1, datetime.datetime(2019, 7, 1, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 1, 19, 0, tzinfo=pytz.UTC),),
+                (2, datetime.datetime(2019, 7, 2, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 2, 11, 0, tzinfo=pytz.UTC),),
+            ],
+            service_transfer.fast_schedule(storage_donor_guid_1, pickup_guid, transport_guids_allow_for_stock, datetime_create_order, datetime_pickup)
+        )
+
+        self.assertEqual([storage_donor_guid_1, storage_guid_2, storage_pickup_guid_3], service_transfer.all_storage_guids())
+        chain_storage_for_delivery = graph.chain_master(storage_donor_guid_1, storage_pickup_guid_3)
+        self.assertEqual(
+            [
+                (storage_donor_guid_1, storage_pickup_guid_3),
+                (storage_donor_guid_1, storage_guid_2, storage_pickup_guid_3),
+            ],
+            chain_storage_for_delivery
+        )
+        self.assertEqual(
+            [datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC)],
+            repository_schedule.datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(
+                transport_auto_guid_1, storage_donor_guid_1, storage_guid_2, datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC)
+            )
+        )
+        self.assertEqual(
+            [],
+            repository_schedule.datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(
+                transport_auto_guid_1, storage_donor_guid_1, storage_pickup_guid_3, datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC)
+            )
+        )
+        self.assertEqual(
+            [datetime.datetime(2019, 7, 2, 11, 00, 00, tzinfo=pytz.UTC)],
+            repository_schedule.datetimes_arrival_for_delivery_by_transport_from_storage_to_storage_in_datetime_depart(
+                transport_car_guid_2, storage_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 2, 10, 00, 00, tzinfo=pytz.UTC)
+            )
+        )
+

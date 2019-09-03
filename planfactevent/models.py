@@ -515,12 +515,18 @@ class ServiceTransferProductFromTo(object):
     def add_storage_external_guid(self, storage_guid):
         self.__storage_external_guids.append(storage_guid)
 
+    def add_storage_pickup_guid(self, storage_guid):
+        self.__storage_pickup_guids.append(storage_guid)
+
     def add_transport_guid(self, transport_guid):
         self.__transport_guids.append(transport_guid)
 
     def all_storage_guids(self):
         #return PlanFactEvent.storage_guids()
         return self.__storage_guids
+
+    def all_storage_pickup_guids(self):
+        return self.__storage_pickup_guids
 
     def edge_transport_delivery_from_storage_to_storage_in_datetime_range(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
         items_edge_delivery = []
@@ -602,6 +608,7 @@ class ServiceTransferProductFromTo(object):
     def __init__(self, repository_schedule, graph):
         self.__storage_guids = []
         self.__storage_external_guids = []
+        self.__storage_pickup_guids = []
         self.__transport_guids = []
         self.__repository_schedule = repository_schedule
         self.__graph = graph
@@ -875,4 +882,14 @@ class ServiceOrder(object):
 #    plan_event_guid
 #    fact_event_guid
 #    plan_fact_event_guid
+
+class RepositoryProduct(object):
+    def add_product(self, product_guid):
+        self.__products.append(product_guid)
+
+    def __init__(self):
+        self.__products = []
+
+    def product_guids(self, params):
+        return sorted(self.__products)
 
