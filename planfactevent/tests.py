@@ -272,7 +272,14 @@ class TestEStorage(TestCase):
         currency_mi8 = "USD"
 
         quantity_mi8 = 1
-        basket_1 = [(product_guid_mi8, quantity_mi8),]
+        #basket_1 = [(product_guid_mi8, quantity_mi8),]
+        basket_1 = Basket()
+        basket_1.append(
+            {
+                "product_guid": product_guid_mi8,
+                "quantity": quantity_mi8,
+            }
+        )
         storage_donor_guid_1 = 1
         storage_guid_2 = 2
         storage_pickup_guid_3 = 3
@@ -436,7 +443,8 @@ class TestEStorage(TestCase):
         graph = Graph(repository_schedule)
         service_transfer = ServiceTransferProductFromTo(repository_schedule, graph)
         service_order = ServiceOrder(service_transfer)
-        basket_1 = []
+        #basket_1 = []
+        basket_1 = Basket()
         storage_guid_4 = 4
         storage_pickup_guid_5 = 5
         service_transfer.add_storage_guid(storage_guid_4)
@@ -534,7 +542,8 @@ class TestEStorage(TestCase):
         graph = Graph(repository_schedule)
         service_transfer = ServiceTransferProductFromTo(repository_schedule, graph)
         service_order = ServiceOrder(service_transfer)
-        basket_1 = []
+        #basket_1 = []
+        basket_1 = Basket()
         storage_guid_4 = 4
         storage_pickup_guid_5 = 5
         service_transfer.add_storage_guid(storage_guid_4)
@@ -701,7 +710,8 @@ class TestEStorage(TestCase):
         service_transfer = ServiceTransferProductFromTo(repository_schedule, graph)
         service_order = ServiceOrder(service_transfer)
         #service_order.create_order_sale_pickup(cargo, )
-        basket_1 = []
+        #basket_1 = []
+        basket_1 = Basket()
         storage_donor_guid_1 = 1
         storage_guid_2 = 2
         storage_pickup_guid_3 = 3
@@ -1032,6 +1042,11 @@ class TestEStorage(TestCase):
                 "quantity": count_nead,
             }
         )
+        basket = Basket()
+        basket.append({
+            "product_guid": product_guid_mi8,
+            "quantity": count_nead,
+        })
 
         # начальные данные когда заказ создается клиентом и когда забирается
         datetime_create_order = datetime.datetime(2019, 7, 1, 12, 15, 46, tzinfo=pytz.UTC)
@@ -1043,6 +1058,15 @@ class TestEStorage(TestCase):
         pickup_guid = pickup_guids[0]
 
 
+        self.assertEqual(
+            [
+                (1, 1, 1, datetime.datetime(2019, 7, 1, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 1, 19, 0, tzinfo=pytz.UTC)),
+                (1, 1, 2, datetime.datetime(2019, 7, 2, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 2, 11, 0, tzinfo=pytz.UTC)),
+                (1, 1, 1, datetime.datetime(2019, 7, 1, 16, 0, tzinfo=pytz.UTC), 1, 2, datetime.datetime(2019, 7, 1, 19, 0, tzinfo=pytz.UTC)),
+                (1, 1, 2, datetime.datetime(2019, 7, 2, 10, 0, tzinfo=pytz.UTC), 2, 3, datetime.datetime(2019, 7, 2, 11, 0, tzinfo=pytz.UTC)),
+            ],
+            service_order.generate_plan_event_for_delivery_basket_to_client(basket, pickup_guid, datetime_create_order, datetime_pickup)
+        )
 
         transport_guids_allow_for_stock = [1,2,3,4]
         self.assertEqual(

@@ -419,7 +419,7 @@ class FacrtoryProductGuidWithQuantity(object):
     @classmethod
     def create(cls, basket):
         elements = []
-        for item in basket():
+        for item in basket.items():
             elements.append(
                 (
                     product_guid,
@@ -743,21 +743,24 @@ class ServiceOrder(object):
 
     def count_product(self, basket, product_guid):
         count = 0
-        for item in basket:
+        for item in basket.items():
             if self.get_product_guid(item) == product_guid:
                 count += self.get_quantity(item)
         return count
 
     def get_product_guid(self, basket_item):
-        return basket_item[0]
+        #return basket_item[0]
+        return basket_item["product_guid"]
 
     def get_quantity(self, basket_item):
-        return basket_item[1]
+        #return basket_item[1]
+        return basket_item["quantity"]
+
 
     def __list_stocks_for_basket(self, basket):
         stocks = []
         # Получили остатки нужных товаров от всех складов
-        for item in basket:
+        for item in basket.items():
             product_guid = self.get_product_guid(item)
             for storage_guid in self.__service_transfer.all_storage_guids():
                 for stock in self.__service_transfer.stocks_ready_for_move(storage_guid, product_guid):
@@ -771,7 +774,7 @@ class ServiceOrder(object):
         groups_events_posible_for_product = {}
 
         routes = []
-        for item in basket:
+        for item in basket.items():
             product_guid = self.get_product_guid(item)
             groups_events_posible = []
             transport_guids_allow_for_product = self.__service_transfer.transport_guids_allow_for_product(product_guid)
@@ -797,8 +800,8 @@ class ServiceOrder(object):
 
         # Поштучно перевозить все остатки по самым быстрым перемеениям
         plan_events = []
-        basket_already_move = []
-        for item in basket:
+        basket_already_move = Basket()
+        for item in basket.items():
             product_guid = self.get_product_guid(item)
             groups_events_posible = []
             for route in sorted(routes, key=lambda x: x[-1][4]):
@@ -809,7 +812,11 @@ class ServiceOrder(object):
                             self.__service_transfer.move(stock[0], stock[2], item[0], item[1], item[2], item[3], item[4])
                             plan_events.append((stock[0], stock[2], item[0], item[1], item[2], item[3], item[4]))
                         # удалить нужное количество перемещенны элементов из корзины, и если в корзине нет больще элементов то перети к следующему
-                        basket_already_move.append((stock[0], stock[2]))
+                        #basket_already_move.append((stock[0], stock[2]))
+                        basket_already_move.append({
+                            "product_guid": stock[0],
+                            "quantity": stock[2],
+                        })
                     else:
                         print ',',
         return plan_events
@@ -826,7 +833,7 @@ class ServiceOrder(object):
 
         # Протверили что все что указано в корзине есть на каких то складах в данный момент времни.
         #  Разбираем случай когда stock - это один серийный товар
-        for item in basket:
+        for item in basket.items():
             product_guid = self.get_product_guid(item)
             for i in range(0, self.get_quantity(item)):
                 temp_stock = None
@@ -868,9 +875,6 @@ class ServiceOrder(object):
 
         return []
 
-
-
-
 #Order(models.Model):
 #    datetime_create = models.DateTimeField(u'дата и время создание', auto_now_add=True)
 #    is_sale = models.BooleanField(verbose_name=u'Реализация', default=False)
@@ -892,4 +896,19 @@ class RepositoryProduct(object):
 
     def product_guids(self, params):
         return sorted(self.__products)
+
+class Basket(object):
+    def append(self, params):
+        self.__items.append(
+            {
+                "product_guid": params["product_guid"],
+                "quantity": params["quantity"],
+            }
+        )
+
+    def __init__(self):
+        self.__items = []
+
+    def items(self):
+        return self.__items
 
