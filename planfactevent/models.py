@@ -78,6 +78,7 @@ class PlanFactEvent(models.Model):
     #quantity_to
     #storage = models.ForeignKey(Storage, on_delete=models.CASCADE) # Следует использовать Guid Storage.
     storage_guid = models.IntegerField(u"guid склада сейчас соответствует id этого storage у нас в системе, так себе решение", null=True, blank=True)
+    storage_zone = models.CharField(u"скалад поделен на зоны: main, хранения, укомпелтования, кросддок, ...", max_length=200, null=True, blank=True)
     #transport = models.ForeignKey(Transport, on_delete=models.CASCADE)
     transport_guid = models.IntegerField(u"guid транспорта сейчас соответствует id этого transport у нас в системе, так себе решение", null=True, blank=True)
 
@@ -528,6 +529,19 @@ class ServiceTransferProductFromTo(object):
     def all_storage_pickup_guids(self):
         return self.__storage_pickup_guids
 
+    def download(self, datetime_process_start, datetime_process_finish, storage_guid, stock):
+        """
+        Разгрузка товаров
+        """
+        #self.__push_stock(datetime_arrival, storage_arrival_guid, storage_zone, stock)
+        storage_zone_to = 'зона транспортного средства'
+        self.__push_stock(datetime_process_start, storage_guid, storage_zone_to, stock)
+
+        storage_zone_from = 'зона транспортного средства'
+        self.__pull_stock(datetime_process_finish, storage_guid, storage_zone_from, stock)
+        storage_zone_to = 'Укомплектования'
+        self.__push_stock(datetime_process_finish, storage_guid, storage_zone_to, stock)
+
     def edge_transport_delivery_from_storage_to_storage_in_datetime_range(self, transport_guid, storage_guid_depart, storage_guid_arrival, datetime_start, datetime_pickup):
         items_edge_delivery = []
         datetimes_depart = self.__repository_schedule.datetimes_depart_for_delivery_by_transport_from_storage_to_storage_in_datetime_range(\
@@ -561,7 +575,6 @@ class ServiceTransferProductFromTo(object):
         items_edge_delivery.sort(key=lambda x: x[4])
         return items_edge_delivery
         #return sorted(items_edge_delivery, key=lambda x: x[4])
-
 
     def fast_schedule_for_chain(self, chain, transport_guids_allow_for_stock, datetime_start, datetime_pickup):
         items_delivery = []
@@ -613,7 +626,26 @@ class ServiceTransferProductFromTo(object):
         self.__repository_schedule = repository_schedule
         self.__graph = graph
 
+    def loading(self, datetime_process_start, datetime_process_finish, storage_guid, stock):
+        """
+        Загрузка товаров
+        """
+        #self.__pull_stock(datetime_depart, storage_depart_guid, storage_zone, stock)
+        storage_zone_from = 'Укомплектования'
+        self.__pull_stock(datetime_process_start, storage_guid, storage_zone_from, stock)
+        storage_zone_to = 'зона транспортного средства'
+        self.__push_stock(datetime_process_finish, storage_guid, storage_zone_to, stock)
+
+        storage_zone_from = 'зона транспортного средства'
+        self.__pull_stock(datetime_process_finish, storage_guid, storage_zone_from, stock)
+
     def move(self, product_guid, quantity_for_transfer, storage_depart_guid, datetime_depart, transport_guid, storage_arrival_guid, datetime_arrival):
+        """
+        Перемещение между складами.
+        Отдельно нужно сделать процес продажи клиенту, там меньше будет действий.
+
+        Не учитывает время потраченное на комплектацию, погрузку, разгрузку, разокуплектацию(верене учитыввает но оно получается равным 0).
+        """
         #Получить столько информаци по имеющимся сейчас релальным товарам на складе чтобы потом их же списать, транспортировать и принять уже на другом.
         # транзакция с локом на чтение конкртеных записей, нужна для того чтобы при вытаскиваннии из событий того что приняли и хотим сейчас перевести. 
         #  Не встрял другой конкурирующий процес и не увез товары под другое перемещение.
@@ -631,23 +663,53 @@ class ServiceTransferProductFromTo(object):
         stocks = stocks_ready_for_move[:quantity_for_transfer]
         #залочить их для других перемещений
         #    если не получилось залочить получить другие без этих
+
+        # комплектование
+        for stock in stocks:
+            self.picking(datetime_depart, datetime_depart, storage_depart_guid, stock)
+
+        # погрузка
+        #storage_zone = 'укомплектования'
         #списать их с склада
         for stock in stocks:
-            self.__pull_stock(datetime_depart, storage_depart_guid, stock)
+            #self.__pull_stock(datetime_depart, storage_depart_guid, storage_zone, stock)
+            self.loading(datetime_depart, datetime_depart, storage_depart_guid, stock)
+
         #снять блокировку
-        #принять их к перемещению
+
+        # перевозка
         for stock in stocks:
-            PlanFactEvent.push_transfer(datetime_depart, transport_guid, stock)
-        #списать их с перемещения
-        for stock in stocks:
-            PlanFactEvent.pull_transfer(datetime_arrival, transport_guid, stock)
+            self.transfer(datetime_depart, datetime_arrival, transport_guid, stock)
+
+        # разгрузка
         #приянть их на складе получателе
+        #storage_zone = 'укомплектования'
         for stock in stocks:
-            self.__push_stock(datetime_arrival, storage_arrival_guid, stock)
+            #self.__push_stock(datetime_arrival, storage_arrival_guid, storage_zone, stock)
+            self.download(datetime_arrival, datetime_arrival, storage_arrival_guid, stock)
+
+        # разукомплектование
+        for stock in stocks:
+            self.unpacking(datetime_arrival, datetime_arrival, storage_arrival_guid, stock)
         #finish transaction
+
+    def picking(self, datetime_process_start, datetime_process_finish, storage_guid, stock):
+        """
+        Укомплетование товаров
+        """
+        storage_zone_from = 'Хранения'
+        self.__pull_stock(datetime_process_start, storage_guid, storage_zone_from, stock)
+        storage_zone_to = 'Перемещение внутри склада'
+        self.__push_stock(datetime_process_start, storage_guid, storage_zone_to, stock)
+        storage_zone_from = 'Перемещение внутри склада'
+        self.__pull_stock(datetime_process_finish, storage_guid, storage_zone_from, stock)
+        storage_zone_to = 'Укомплектования'
+        self.__push_stock(datetime_process_finish, storage_guid, storage_zone_to, stock)
+
 
     def pull(self, datetime_process, storage_guid, product_guid, serial_number, quantity, currency, price):
         """
+        Не надо использовать в отрыве от двойной записи
         Данный сепрвис не просто забирает с склада товар, а он еще и проверяем достаточно ли его.
             А точно он долже быть частью работы по сохраннию событий?
             Возможно события просто надо уметь сохранять. Не зависимо от текущего состояния.
@@ -655,12 +717,14 @@ class ServiceTransferProductFromTo(object):
         """
         #stock = PlanFactEvent.create_stock_with_serial_number_v2(product_guid, serial_number, quantity, currency, price)
         stock = FactoryStockFromParams().create(product_guid, serial_number, quantity, currency, price)
-        self.__pull_stock(datetime_process, storage_guid, stock)
+        storage_zone = 'main'
+        self.__pull_stock(datetime_process, storage_guid, storage_zone, stock)
 
-    def __pull_stock(self, datetime_process, storage_guid, stock):
+    def __pull_stock(self, datetime_process, storage_guid, storage_zone, stock):
         plan_fact_event = PlanFactEvent.objects.create(
             datetime_process = datetime_process,
             storage_guid = storage_guid,
+            storage_zone = storage_zone,
             product_guid = stock[0],
             serial_number = stock[1],
             quantity = stock[2],
@@ -672,14 +736,19 @@ class ServiceTransferProductFromTo(object):
             is_fact = True)
 
     def push(self, datetime_process, storage_guid, product_guid, serial_number, quantity, currency, price):
+        """
+        Не надо использовать в отрыве от двойной записи
+        """
         #stock = PlanFactEvent.create_stock_with_serial_number_v2(product_guid, serial_number, quantity, currency, price)
         stock = FactoryStockFromParams().create(product_guid, serial_number, quantity, currency, price)
-        self.__push_stock(datetime_process, storage_guid, stock)
+        storage_zone = 'main'
+        self.__push_stock(datetime_process, storage_guid, storage_zone, stock)
 
-    def __push_stock(self, datetime_process, storage_guid, stock):
+    def __push_stock(self, datetime_process, storage_guid, storage_zone, stock):
         plan_fact_event = PlanFactEvent.objects.create(
             datetime_process = datetime_process,
             storage_guid = storage_guid,
+            storage_zone = storage_zone,
             product_guid = stock[0],
             serial_number = stock[1],
             quantity = stock[2],
@@ -689,6 +758,32 @@ class ServiceTransferProductFromTo(object):
             is_out = False,
             is_plan = False,
             is_fact = True)
+
+    def sale(self, product_guid, quantity_for_transfer, storage_guid, storage_client_guid, datetime_sale):
+        """
+        Продажа товара клиенту в розничном магазине.
+        """
+        #start transaction
+        #получить сейрийники подходящих товаров
+        stocks_ready_for_move = self.stocks_ready_for_move(storage_guid, product_guid)
+
+        #выбрать столько сколько нужно.
+        if len(stocks_ready_for_move) < quantity_for_transfer:
+            print 'Error: Has not stocks nead. In stock %s nead stock %s' % (len(stocks_ready_for_move), quantity_for_transfer)
+            assert False
+        stocks = stocks_ready_for_move[:quantity_for_transfer]
+        #залочить их для других перемещений
+        #    если не получилось залочить получить другие без этих
+
+        storage_zone = 'витрина'
+        #списать их с склада
+        for stock in stocks:
+            self.__pull_stock(datetime_sale, storage_guid, storage_zone, stock)
+
+        storage_zone = 'шкаф'
+        #приянть их на складе получателе
+        for stock in stocks:
+            self.__push_stock(datetime_sale, storage_client_guid, storage_zone, stock)
 
     def stocks_ready_for_move(self, storage_guid, product_guid):
         """
@@ -719,8 +814,30 @@ class ServiceTransferProductFromTo(object):
     #def storage_external_guids(self):
     #    return list(self.__storage_external_guids)
 
+    def transfer(self, datetime_depart, datetime_arrival, transport_guid, stock):
+        #принять их к перемещению
+        PlanFactEvent.push_transfer(datetime_depart, transport_guid, stock)
+        #списать их с перемещения
+        PlanFactEvent.pull_transfer(datetime_arrival, transport_guid, stock)
+
     def transport_guids_allow_for_product(self, product_guid):
         return []
+
+    def unpacking(self, datetime_process_start, datetime_process_finish, storage_guid, stock):
+        """
+        Разукомплетование товаров
+        """
+        storage_zone_from = 'Укомплектования'
+        self.__pull_stock(datetime_process_start, storage_guid, storage_zone_from, stock)
+        storage_zone_to = 'Перемещение внутри склада'
+        self.__push_stock(datetime_process_start, storage_guid, storage_zone_to, stock)
+        storage_zone_from = 'Перемещение внутри склада'
+        self.__pull_stock(datetime_process_finish, storage_guid, storage_zone_from, stock)
+        storage_zone_to = 'Хранения'
+        self.__push_stock(datetime_process_start, storage_guid, storage_zone_to, stock)
+
+        #print 'Nead code!'
+        #pass
 
 class ServiceOrder(object):
     """
