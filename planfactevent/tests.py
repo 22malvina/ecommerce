@@ -1139,21 +1139,69 @@ class TestEStorage(TestCase):
         """
 
         # test 1
-        datitime_now = '2019-10-02 12:30:10'
+        datitime_process_start = '2019-10-02 12:30:10'
+        #datetime_process = timezone.now()
+
+        product_guid_mi8 = 1
+
+        repository_product = RepositoryProduct()
+        repository_product.add_product(product_guid_mi8)
+
+        repository_schedule = RepositorySchedule()
+        graph = Graph(repository_schedule)
+        service_transfer = ServiceTransferProductFromTo(repository_schedule, graph)
+        service_order = ServiceOrder(service_transfer)
+
+
+        storage_donor_guid_1 = 1
+        storage_guid_2 = 2
+        storage_pickup_guid_3 = 3
+
+        service_transfer.add_storage_guid(storage_donor_guid_1)
+        service_transfer.add_storage_external_guid(storage_donor_guid_1)
+        service_transfer.add_storage_guid(storage_guid_2)
+        service_transfer.add_storage_guid(storage_pickup_guid_3)
+        service_transfer.add_storage_pickup_guid(storage_pickup_guid_3)
+
+        transport_auto_guid_1 = 1
+        transport_car_guid_2 = 2
+
+        service_transfer.add_transport_guid(transport_auto_guid_1)
+        service_transfer.add_transport_guid(transport_car_guid_2)
+
+        purchase_cost_mi8 = 105.1
+        currency_mi8 = "USD"
+        datetime_process = datetime.datetime(2001, 1, 1, 12, 30, 00, tzinfo=pytz.UTC)
+
+        plan_fact_event = PlanFactEvent.objects.create(
+            datetime_process=datetime_process, storage_guid=storage_donor_guid_1, product_guid=product_guid_mi8,
+            serial_number=1001, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(
+            datetime_process=datetime_process, storage_guid=storage_donor_guid_1, product_guid=product_guid_mi8,
+            serial_number=1002, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(
+            datetime_process=datetime_process, storage_guid=storage_donor_guid_1, product_guid=product_guid_mi8,
+            serial_number=1003, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+
+        repository_schedule.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 1, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 1, 19, 00, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 2, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 2, 19, 00, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 3, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 3, 19, 00, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 4, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 4, 19, 00, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_donor_guid_1, datetime.datetime(2019, 7, 5, 16, 00, 00, tzinfo=pytz.UTC), transport_auto_guid_1, storage_guid_2, datetime.datetime(2019, 7, 5, 19, 00, 00, tzinfo=pytz.UTC))
+
+        repository_schedule.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 1, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 1, 11, 00, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 2, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 2, 11, 00, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 3, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 3, 11, 00, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 4, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 4, 11, 00, 00, tzinfo=pytz.UTC))
+        repository_schedule.add_schedule(storage_guid_2, datetime.datetime(2019, 7, 5, 10, 00, 00, tzinfo=pytz.UTC), transport_car_guid_2, storage_pickup_guid_3, datetime.datetime(2019, 7, 5, 11, 00, 00, tzinfo=pytz.UTC))
 
         basket = Basket()
-        storage = Storage()
-        pickup_point = storage
+
         datetime_ready_for_pickup = '2019-10-02 14:30:00'
         plans = [
             'Список действий которые нужно соверщить чтобы заказ исполнился',
             'создать идентификатор заказа(задачу), обоснование для всех действий произведенных по изменнеию состояния системы',
-            'создать палновые действия - как понять что последовательность из 2-х твп уже хапланированных приведет нас к нужному стотоянию ни чего сверх этого планировать не надо а просто зарезервировать данную номенклатур, она продолжит движения, которые запланированы заранее, и еще запалнироват выдачу по заказу клиенту на финалной точке.'
+            'создать палновые действия - как понять что последовательность из 2-х твп уже хапланированных приведет нас к нужному стотоянию ни чего сверх этого планировать не надо а просто зарезервировать данную номенклатур, она продолжит движения, которые запланированы заранее, и еще запалнироват выдачу по заказу клиенту на финалной точке.',
         ]
         create_order(basket, pickup_point, datetime_ready_for_pickup, plans)
-
-
-
-        pass
-
 
