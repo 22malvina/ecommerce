@@ -17,6 +17,78 @@ class TestEStorage(TestCase):
         print("SETUP DATA FOR ...")
         self.assertEqual.__self__.maxDiff = None
 
+
+    def test_fix_customer_come_to_shop_all_work(self):
+        """
+        Покупатель проходил мимо магазина зеш в него увидел телфон на витрине и купил.
+        
+        Варинат товар уже был принят в систему магазина, и магазин сообщил в центральную систему все свои действия.
+        """
+
+        datitime_process_start = '2019-10-02 12:30:10'
+        #datetime_process = timezone.now()
+
+        product_guid_mi8 = 1
+
+        repository_product = RepositoryProduct()
+        repository_product.add_product(product_guid_mi8)
+
+        repository_schedule = RepositorySchedule()
+        graph = Graph(repository_schedule)
+        service_transfer = ServiceTransferProductFromTo(repository_schedule, graph)
+        service_order = ServiceOrder(service_transfer)
+
+        storage_pickup_guid_3 = 3
+
+        service_transfer.add_storage_guid(storage_pickup_guid_3)
+        service_transfer.add_storage_pickup_guid(storage_pickup_guid_3)
+
+        purchase_cost_mi8 = 105.1
+        currency_mi8 = "USD"
+        datetime_process = datetime.datetime(2001, 1, 1, 12, 30, 00, tzinfo=pytz.UTC)
+
+        plan_fact_event = PlanFactEvent.objects.create(
+            datetime_process=datetime_process, storage_guid=storage_pickup_guid_3, product_guid=product_guid_mi8,
+            serial_number=1001, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+        plan_fact_event = PlanFactEvent.objects.create(
+            datetime_process=datetime_process, storage_guid=storage_pickup_guid_3, product_guid=product_guid_mi8,
+            serial_number=1002, quantity=1, currency=currency_mi8, price=purchase_cost_mi8, is_in=True, is_out=False, is_plan=False, is_fact=True)
+
+        self.assertEqual(2, PlanFactEvent.count_product([storage_pickup_guid_3], [product_guid_mi8])
+
+        # start
+
+        customer = {
+            id: None,
+            'customer_type': 'Розничый', # возможно город клиента в которм произошла реализация, тогда модно еще регион, страна,... вечерний покупатель, утренний, ...
+        }
+        basket = Basket()
+        datetime_ready_for_pickup = '2019-10-02 14:30:00'
+        price_mi8 = 200
+        currency_mi8 = "USD"
+        basket.append(
+            {
+                "product_guid": product_guid_mi8,
+                "quantity": quantity_mi8,
+                "price": price_mi8,
+                "currency": currency_mi8,
+            }
+        )
+        point = init_point(storage_pickup_guid_3)
+        #order_1 = create_sale_order(basket, storage_pickup_guid_3, datetime_ready_for_pickup)
+        order_1 = point.create_sale_order(basket, datetime_ready_for_pickup, customer)
+            # принять оплату по заказу order_1 от розничного покупателя
+            inbound = point.push_payment(order_1)
+            # выдать товар розничному покупателю
+            outbound = point.pull_product(order_1)
+            # пробить чек(выдать его покупателю и вторую часть чека сохранить у себя)
+            bill = point.creat_bill(order_1)
+
+        self.assertEqual(1, PlanFactEvent.count_product([storage_pickup_guid_3], [product_guid_mi8])
+
+        self.assertEqual(1, PlanFactEvent.count_product([customer], [product_guid_mi8])
+
+
     def test_base_1(self):
         datetime_process = timezone.now()
         self.assertEqual(0, PlanFactEvent.count_product([], []))
